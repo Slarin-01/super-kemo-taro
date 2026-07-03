@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
+        authchk()
         tvStatus = findViewById(R.id.tvStatus)
 
         findViewById<Button>(R.id.btnToggleDnd).setOnClickListener {
@@ -32,18 +32,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /*実際の通知管理の処理上から、権限なし・ミュートオフ・ミュートオンのときの処理*/
     private fun toggleDnd(): String {
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (!notificationManager.isNotificationPolicyAccessGranted){
+            return "通知を管理する権限がありません。アプリを再起動して通知管理の権限を付与してください。"
+        }
+        else if (notificationManager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+            return "おやすみモード: ON"
+        } else {
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+            return "おやすみモード: OFF"
+        }
+    }
+/*通知をミュートにする権限があるかどうかのチェック*/
+    private fun authchk(){
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (!notificationManager.isNotificationPolicyAccessGranted) {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-            return "「通知へのアクセス」を許可してから、もう一度押してください"
-        }
-        return if (notificationManager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-            "おやすみモード: ON"
-        } else {
-            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-            "おやすみモード: OFF"
         }
     }
 }
