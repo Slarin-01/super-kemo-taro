@@ -4,16 +4,12 @@ plugins {
 
 android {
     namespace = "com.example.super_kemo_taro3"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37  // ← シンプルに数値だけ
 
     defaultConfig {
         applicationId = "com.example.super_kemo_taro3"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37  // ← こちらも37に
         versionCode = 1
         versionName = "1.0"
 
@@ -22,9 +18,7 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = false  // ← ここも正しい書き方に
         }
     }
     compileOptions {
