@@ -1,5 +1,6 @@
 package com.example.super_kemo_taro3
 
+import android.app.NotificationManager
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -9,9 +10,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import android.app.NotificationManager
 
 class MainActivity : AppCompatActivity() {
+
+    private val blockedSlots = mutableSetOf<String>()
 
     private lateinit var tvStatus: TextView
 
@@ -19,6 +21,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        setupTimetableButtons()
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -51,6 +56,27 @@ class MainActivity : AppCompatActivity() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (!notificationManager.isNotificationPolicyAccessGranted) {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+        }
+    }
+
+    private fun setupTimetableButtons() {
+        bindTimetableButton(R.id.btn_mon_1, "MON_1")
+    }
+
+    private fun bindTimetableButton(
+        buttonId: Int,
+        slotKey: String
+    ) {
+        val button = findViewById<Button>(buttonId)
+
+        button.setOnClickListener {
+            if (slotKey in blockedSlots) {
+                blockedSlots.remove(slotKey)
+                button.setBackgroundColor(android.graphics.Color.LTGRAY)
+            } else {
+                blockedSlots.add(slotKey)
+                button.setBackgroundColor(android.graphics.Color.GREEN)
+            }
         }
     }
 }
