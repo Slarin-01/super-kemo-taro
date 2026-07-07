@@ -81,6 +81,49 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupTimetableButtons() {
         bindTimetableButton(R.id.btn_mon_1, "MON_1")
+        bindTimetableButton(R.id.btn_mon_2, "MON_2")
+        bindTimetableButton(R.id.btn_mon_3, "MON_3")
+        bindTimetableButton(R.id.btn_mon_4, "MON_4")
+        bindTimetableButton(R.id.btn_mon_5, "MON_5")
+        bindTimetableButton(R.id.btn_mon_6, "MON_6")
+        bindTimetableButton(R.id.btn_mon_7, "MON_7")
+        bindTimetableButton(R.id.btn_mon_8, "MON_8")
+
+        bindTimetableButton(R.id.btn_tue_1, "TUE_1")
+        bindTimetableButton(R.id.btn_tue_2, "TUE_2")
+        bindTimetableButton(R.id.btn_tue_3, "TUE_3")
+        bindTimetableButton(R.id.btn_tue_4, "TUE_4")
+        bindTimetableButton(R.id.btn_tue_5, "TUE_5")
+        bindTimetableButton(R.id.btn_tue_6, "TUE_6")
+        bindTimetableButton(R.id.btn_tue_7, "TUE_7")
+        bindTimetableButton(R.id.btn_tue_8, "TUE_8")
+
+        bindTimetableButton(R.id.btn_wed_1, "WED_1")
+        bindTimetableButton(R.id.btn_wed_2, "WED_2")
+        bindTimetableButton(R.id.btn_wed_3, "WED_3")
+        bindTimetableButton(R.id.btn_wed_4, "WED_4")
+        bindTimetableButton(R.id.btn_wed_5, "WED_5")
+        bindTimetableButton(R.id.btn_wed_6, "WED_6")
+        bindTimetableButton(R.id.btn_wed_7, "WED_7")
+        bindTimetableButton(R.id.btn_wed_8, "WED_8")
+
+        bindTimetableButton(R.id.btn_thu_1, "THU_1")
+        bindTimetableButton(R.id.btn_thu_2, "THU_2")
+        bindTimetableButton(R.id.btn_thu_3, "THU_3")
+        bindTimetableButton(R.id.btn_thu_4, "THU_4")
+        bindTimetableButton(R.id.btn_thu_5, "THU_5")
+        bindTimetableButton(R.id.btn_thu_6, "THU_6")
+        bindTimetableButton(R.id.btn_thu_7, "THU_7")
+        bindTimetableButton(R.id.btn_thu_8, "THU_8")
+
+        bindTimetableButton(R.id.btn_fri_1, "FRI_1")
+        bindTimetableButton(R.id.btn_fri_2, "FRI_2")
+        bindTimetableButton(R.id.btn_fri_3, "FRI_3")
+        bindTimetableButton(R.id.btn_fri_4, "FRI_4")
+        bindTimetableButton(R.id.btn_fri_5, "FRI_5")
+        bindTimetableButton(R.id.btn_fri_6, "FRI_6")
+        bindTimetableButton(R.id.btn_fri_7, "FRI_7")
+        bindTimetableButton(R.id.btn_fri_8, "FRI_8")
     }
 
     private fun bindTimetableButton(
