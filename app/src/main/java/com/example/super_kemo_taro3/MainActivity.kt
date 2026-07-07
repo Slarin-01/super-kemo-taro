@@ -15,6 +15,10 @@ class MainActivity : AppCompatActivity() {
 
     private val blockedSlots = mutableSetOf<String>()
 
+    private val preferences by lazy {
+        getSharedPreferences("timetable_settings", MODE_PRIVATE)
+    }
+
     private lateinit var tvStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        loadBlockedSlots()
         setupTimetableButtons()
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -36,6 +41,20 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnToggleDnd).setOnClickListener {
             tvStatus.text = toggleDnd()
         }
+    }
+
+    private fun saveBlockedSlots() {
+        preferences.edit()
+           .putStringSet("blocked_slots", blockedSlots.toSet())
+            .apply()
+    }
+
+    private fun loadBlockedSlots() {
+        val savedSlots =
+            preferences.getStringSet("blocked_slots", emptySet()) ?: emptySet()
+
+        blockedSlots.clear()
+        blockedSlots.addAll(savedSlots)
     }
 
     /*実際の通知管理の処理上から、権限なし・ミュートオフ・ミュートオンのときの処理*/
@@ -132,6 +151,12 @@ class MainActivity : AppCompatActivity() {
     ) {
         val button = findViewById<Button>(buttonId)
 
+        if (slotKey in blockedSlots) {
+            button.setBackgroundColor(android.graphics.Color.GREEN)
+        } else {
+            button.setBackgroundColor(android.graphics.Color.LTGRAY)
+        }
+
         button.setOnClickListener {
             if (slotKey in blockedSlots) {
                 blockedSlots.remove(slotKey)
@@ -140,6 +165,8 @@ class MainActivity : AppCompatActivity() {
                 blockedSlots.add(slotKey)
                 button.setBackgroundColor(android.graphics.Color.GREEN)
             }
+
+            saveBlockedSlots()
         }
     }
 }
