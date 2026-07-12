@@ -188,7 +188,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val triggerTime = System.currentTimeMillis() + 60 * 1000
+        val parts = slotKey.split("_")
+        val day = parts[0]
+        val slot = parts[1].toInt()
+
+        val calDay = dayMap[day] ?: return
+        val times = slotTimes[slot] ?: return
+
+        // 開始時刻（ミュートON）
+        val startCal = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_WEEK, calDay)
+            set(Calendar.HOUR_OF_DAY, times.first.first)
+            set(Calendar.MINUTE, times.first.second)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis < System.currentTimeMillis()) {
+                add(Calendar.WEEK_OF_YEAR, 1)  // 過去なら来週にする
+            }
+        }
 
         val onIntent = PendingIntent.getBroadcast(
             this,
@@ -196,14 +213,37 @@ class MainActivity : AppCompatActivity() {
             Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_ON },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            triggerTime,
+            startCal.timeInMillis,
             onIntent
         )
 
-        Log.d("DND", "アラーム登録: $slotKey → ${java.util.Date(triggerTime)}")
+        // 終了時刻（ミュートOFF）
+        val endCal = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_WEEK, calDay)
+            set(Calendar.HOUR_OF_DAY, times.second.first)
+            set(Calendar.MINUTE, times.second.second)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis < System.currentTimeMillis()) {
+                add(Calendar.WEEK_OF_YEAR, 1)
+            }
+        }
+
+        val offIntent = PendingIntent.getBroadcast(
+            this,
+            slotKey.hashCode() + 1000,
+            Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_OFF },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            endCal.timeInMillis,
+            offIntent
+        )
+
+        Log.d("DND", "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${java.util.Date(endCal.timeInMillis)}")
     }
 
     private fun cancelSlot(slotKey: String) {
