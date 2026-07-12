@@ -15,6 +15,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.util.Calendar
 
+
 class MainActivity : AppCompatActivity() {
 
     private val slotTimes = mapOf(
@@ -203,14 +204,18 @@ class MainActivity : AppCompatActivity() {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis < System.currentTimeMillis()) {
-                add(Calendar.WEEK_OF_YEAR, 1)  // 過去なら来週にする
+                add(Calendar.WEEK_OF_YEAR, 1)
             }
         }
 
+        val onIntentBase = Intent(this, DndReceiver::class.java).apply {
+            action = DndReceiver.ACTION_DND_ON
+        }
+        onIntentBase.putExtra("requestCode", slotKey.hashCode())
         val onIntent = PendingIntent.getBroadcast(
             this,
             slotKey.hashCode(),
-            Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_ON },
+            onIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.setExactAndAllowWhileIdle(
@@ -231,10 +236,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val offIntentBase = Intent(this, DndReceiver::class.java).apply {
+            action = DndReceiver.ACTION_DND_OFF
+        }
+        offIntentBase.putExtra("requestCode", slotKey.hashCode() + 1000)
         val offIntent = PendingIntent.getBroadcast(
             this,
             slotKey.hashCode() + 1000,
-            Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_OFF },
+            offIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.setExactAndAllowWhileIdle(
@@ -245,7 +254,6 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("DND", "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${java.util.Date(endCal.timeInMillis)}")
     }
-
     private fun cancelSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
