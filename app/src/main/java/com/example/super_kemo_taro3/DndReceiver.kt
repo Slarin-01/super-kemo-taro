@@ -10,7 +10,7 @@ import android.util.Log
 
 class DndReceiver : BroadcastReceiver() {
     companion object {
-        const val ACTION_DND_ON  = "com.example.super_kemo_taro3.DND_ON"
+        const val ACTION_DND_ON = "com.example.super_kemo_taro3.DND_ON"
         const val ACTION_DND_OFF = "com.example.super_kemo_taro3.DND_OFF"
     }
 
@@ -25,6 +25,7 @@ class DndReceiver : BroadcastReceiver() {
                 // 来週の同じ時刻に再登録
                 reschedule(context, intent, ACTION_DND_ON)
             }
+
             ACTION_DND_OFF -> {
                 nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
                 // 来週の同じ時刻に再登録
@@ -40,25 +41,31 @@ class DndReceiver : BroadcastReceiver() {
             if (!alarmManager.canScheduleExactAlarms()) return
         }
 
-        // 来週の同じ時刻（7日後）
-        val nextTime = System.currentTimeMillis() + AlarmManager.INTERVAL_DAY * 7
-
         val requestCode = intent.getIntExtra("requestCode", 0)
 
-        val newIntent = PendingIntent.getBroadcast(
+        // 本来の発火時刻を取得（なければ現在時刻）
+        val scheduledTime = intent.getLongExtra("scheduledTime", System.currentTimeMillis())
+
+        // 本来の時刻から7日後（ズレが蓄積しないようにした）
+        val nextTime = scheduledTime + AlarmManager.INTERVAL_DAY * 7
+
+        val newIntent = Intent(context, DndReceiver::class.java).apply {
+            this.action = action
+        }
+        newIntent.putExtra("requestCode", requestCode)
+        newIntent.putExtra("scheduledTime", nextTime)  // 次回の予定時刻を渡す
+
+        val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
-            Intent(context, DndReceiver::class.java).apply {
-                this.action = action
-                putExtra("requestCode", requestCode)
-            },
+            newIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             nextTime,
-            newIntent
+            pendingIntent
         )
 
         Log.d("DND", "来週に再登録: $action → ${java.util.Date(nextTime)}")
