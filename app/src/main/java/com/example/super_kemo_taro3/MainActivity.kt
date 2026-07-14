@@ -65,6 +65,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnToggleDnd).setOnClickListener {
             tvStatus.text = toggleDnd()
         }
+
+        //シーン変更ボタン
+        val btn_change_scene = findViewById<Button>(R.id.btn_change_scene)
+        btn_change_scene.setOnClickListener {
+            val intent = Intent(this, MainActivity2::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun saveBlockedSlots() {
