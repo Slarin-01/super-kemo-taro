@@ -1,22 +1,18 @@
 package com.example.super_kemo_taro3
 
 import android.app.AlarmManager
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import android.widget.Button
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.util.Calendar
 
-
-class MainActivity : AppCompatActivity() {
+class TimetableActivity : AppCompatActivity() {
 
     private val slotTimes = mapOf(
         1 to Pair(Pair(8, 40),  Pair(9,  30)),
@@ -43,40 +39,18 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("timetable_settings", MODE_PRIVATE)
     }
 
-    private lateinit var tvStatus: TextView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_timetable)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        authchk()
         loadBlockedSlots()
         setupTimetableButtons()
-
-        tvStatus = findViewById(R.id.tvStatus)
-        tvStatus.text = getDndStatus()
-
-        findViewById<Button>(R.id.btnToggleDnd).setOnClickListener {
-            tvStatus.text = toggleDnd()
-        }
-
-        //シーン変更ボタン
-        findViewById<Button>(R.id.btn_edit).setOnClickListener {
-            startActivity(Intent(this, MainActivity3::class.java))
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        loadBlockedSlots()
-        setupTimetableButtons()
-        tvStatus.text = getDndStatus()
     }
 
     private fun saveBlockedSlots() {
@@ -86,43 +60,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadBlockedSlots() {
-        val savedSlots =
-            preferences.getStringSet("blocked_slots", emptySet()) ?: emptySet()
+        val savedSlots = preferences.getStringSet("blocked_slots", emptySet()) ?: emptySet()
         blockedSlots.clear()
         blockedSlots.addAll(savedSlots)
-    }
-
-    private fun toggleDnd(): String {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!nm.isNotificationPolicyAccessGranted) {
-            return "おやすみモードへのアクセスが許可されていません。設定画面で許可してください。"
-        }
-        return if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-            nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-            "通打モード: ON"
-        } else {
-            nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-            "通知モード: OFF"
-        }
-    }
-
-    private fun getDndStatus(): String {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!nm.isNotificationPolicyAccessGranted) {
-            return "通知モード：権限が無いので確認できません"
-        }
-        return if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-            "通知モード：OFF"
-        } else {
-            "通知モード：ON"
-        }
-    }
-
-    private fun authchk() {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!nm.isNotificationPolicyAccessGranted) {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-        }
     }
 
     private fun setupTimetableButtons() {
@@ -171,14 +111,26 @@ class MainActivity : AppCompatActivity() {
     private fun bindTimetableButton(buttonId: Int, slotKey: String) {
         val button = findViewById<Button>(buttonId)
 
-        // 色だけ反映・タップ不可
         if (slotKey in blockedSlots) {
             button.setBackgroundColor(android.graphics.Color.GREEN)
         } else {
             button.setBackgroundColor(android.graphics.Color.LTGRAY)
         }
-        button.isClickable = false
+
+        button.setOnClickListener {
+            if (slotKey in blockedSlots) {
+                blockedSlots.remove(slotKey)
+                button.setBackgroundColor(android.graphics.Color.LTGRAY)
+                cancelSlot(slotKey)
+            } else {
+                blockedSlots.add(slotKey)
+                button.setBackgroundColor(android.graphics.Color.GREEN)
+                scheduleSlot(slotKey)
+            }
+            saveBlockedSlots()
+        }
     }
+
     private fun scheduleSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
@@ -196,7 +148,6 @@ class MainActivity : AppCompatActivity() {
         val calDay = dayMap[day] ?: return
         val times = slotTimes[slot] ?: return
 
-        // 開始時刻（ミュートON）
         val startCal = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, calDay)
             set(Calendar.HOUR_OF_DAY, times.first.first)
@@ -214,18 +165,11 @@ class MainActivity : AppCompatActivity() {
         onIntentBase.putExtra("requestCode", slotKey.hashCode())
         onIntentBase.putExtra("scheduledTime", startCal.timeInMillis)
         val onIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode(),
-            onIntentBase,
+            this, slotKey.hashCode(), onIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            startCal.timeInMillis,
-            onIntent
-        )
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, startCal.timeInMillis, onIntent)
 
-        // 終了時刻（ミュートOFF）
         val endCal = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, calDay)
             set(Calendar.HOUR_OF_DAY, times.second.first)
@@ -243,33 +187,26 @@ class MainActivity : AppCompatActivity() {
         offIntentBase.putExtra("requestCode", slotKey.hashCode() + 1000)
         offIntentBase.putExtra("scheduledTime", endCal.timeInMillis)
         val offIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode() + 1000,
-            offIntentBase,
+            this, slotKey.hashCode() + 1000, offIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            endCal.timeInMillis,
-            offIntent
-        )
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endCal.timeInMillis, offIntent)
 
         Log.d("DND", "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${java.util.Date(endCal.timeInMillis)}")
     }
+
     private fun cancelSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
         val onIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode(),
+            this, slotKey.hashCode(),
             Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_ON },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(onIntent)
 
         val offIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode() + 1000,
+            this, slotKey.hashCode() + 1000,
             Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_OFF },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
