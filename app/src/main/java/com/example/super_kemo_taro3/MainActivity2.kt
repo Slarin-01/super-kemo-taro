@@ -3,6 +3,7 @@ package com.example.super_kemo_taro3
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
@@ -57,6 +58,7 @@ class MainActivity2 : AppCompatActivity() {
                 editText.setText(String.format("%02d:%02d", selectedHour, selectedMinute))
             }, hour, minute, true)
             timePickerDialog.show()
+            Log.d("DND","$timePickerDialog")
 
         }
 
