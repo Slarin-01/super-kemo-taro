@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="match_parent"
     tools:context=".MainActivity2">
 
@@ -27,20 +27,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="1"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_1"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView"
@@ -56,12 +56,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -73,20 +74,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="2"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_2"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView2"
@@ -102,12 +103,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -119,20 +121,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="3"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_3"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView3"
@@ -148,12 +150,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -165,20 +168,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="4"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_4"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView4"
@@ -194,12 +197,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -211,20 +215,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="5"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_5"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView5"
@@ -240,12 +244,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -257,20 +262,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="6"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_6"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView6"
@@ -286,12 +291,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -303,20 +309,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="7"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_7"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView7"
@@ -332,12 +338,13 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -349,20 +356,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:gravity="center"
                 android:text="8"
-                android:textSize="35dp"
-                android:gravity="center" />
+                android:textSize="35dp" />
 
             <EditText
                 android:id="@+id/time_start_8"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true" />
+                android:gravity="center"
+                android:inputType="time" />
 
             <TextView
                 android:id="@+id/textView8"
@@ -378,24 +385,39 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clickable="true"
                 android:ems="10"
-                android:inputType="time"
-                android:gravity="center"
                 android:focusable="false"
-                android:clickable="true"/>
+                android:gravity="center"
+                android:inputType="time" />
         </LinearLayout>
 
 
-        <Button
-            android:id="@+id/btn_change_scene2_save"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="保存して戻る" />
-        <Button
-            android:id="@+id/btn_change_scene2_not_save"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="保存しないで戻る" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_change_scene2_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="保存して戻る" />
+            <Button
+                android:id="@+id/btn_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="初期化" />
+            <Button
+                android:id="@+id/btn_change_scene2_not_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存せず戻る" />
+        </LinearLayout>
+
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
