@@ -16,12 +16,6 @@
         tools:layout_editor_absoluteX="20dp"
         tools:layout_editor_absoluteY="0dp">
 
-        <Button
-            android:id="@+id/btn_change_scene2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="曜日選択　切替" />
-
         <LinearLayout
             android:layout_width="370dp"
             android:layout_height="wrap_content"
@@ -390,6 +384,18 @@
                 android:focusable="false"
                 android:clickable="true"/>
         </LinearLayout>
+
+
+        <Button
+            android:id="@+id/btn_change_scene2_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存して戻る" />
+        <Button
+            android:id="@+id/btn_change_scene2_not_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存しないで戻る" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
