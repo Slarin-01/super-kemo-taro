@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
         return if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
             nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-            "通打モード: ON"
+            "通知モード: ON"
         } else {
             nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
             "通知モード: OFF"
