@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="top"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="月" />
+
+            <Button android:id="@+id/btn_mon_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1" />
+            <Button android:id="@+id/btn_mon_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="2" />
+            <Button android:id="@+id/btn_mon_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3" />
+            <Button android:id="@+id/btn_mon_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4" />
+            <Button android:id="@+id/btn_mon_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5" />
+            <Button android:id="@+id/btn_mon_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="6" />
+            <Button android:id="@+id/btn_mon_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="7" />
+            <Button android:id="@+id/btn_mon_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="8" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="top"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="火" />
+
+            <Button android:id="@+id/btn_tue_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1" />
+            <Button android:id="@+id/btn_tue_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="2" />
+            <Button android:id="@+id/btn_tue_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3" />
+            <Button android:id="@+id/btn_tue_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4" />
+            <Button android:id="@+id/btn_tue_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5" />
+            <Button android:id="@+id/btn_tue_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="6" />
+            <Button android:id="@+id/btn_tue_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="7" />
+            <Button android:id="@+id/btn_tue_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="8" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="top"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="水" />
+
+            <Button android:id="@+id/btn_wed_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1" />
+            <Button android:id="@+id/btn_wed_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="2" />
+            <Button android:id="@+id/btn_wed_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3" />
+            <Button android:id="@+id/btn_wed_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4" />
+            <Button android:id="@+id/btn_wed_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5" />
+            <Button android:id="@+id/btn_wed_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="6" />
+            <Button android:id="@+id/btn_wed_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="7" />
+            <Button android:id="@+id/btn_wed_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="8" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="top"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="木" />
+
+            <Button android:id="@+id/btn_thu_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1" />
+            <Button android:id="@+id/btn_thu_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="2" />
+            <Button android:id="@+id/btn_thu_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3" />
+            <Button android:id="@+id/btn_thu_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4" />
+            <Button android:id="@+id/btn_thu_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5" />
+            <Button android:id="@+id/btn_thu_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="6" />
+            <Button android:id="@+id/btn_thu_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="7" />
+            <Button android:id="@+id/btn_thu_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="8" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="top"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="金" />
+
+            <Button android:id="@+id/btn_fri_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1" />
+            <Button android:id="@+id/btn_fri_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="2" />
+            <Button android:id="@+id/btn_fri_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3" />
+            <Button android:id="@+id/btn_fri_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4" />
+            <Button android:id="@+id/btn_fri_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5" />
+            <Button android:id="@+id/btn_fri_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="6" />
+            <Button android:id="@+id/btn_fri_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="7" />
+            <Button android:id="@+id/btn_fri_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="8" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

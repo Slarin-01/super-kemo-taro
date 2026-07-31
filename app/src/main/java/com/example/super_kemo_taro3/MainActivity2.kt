@@ -4,6 +4,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
@@ -208,6 +209,8 @@ class MainActivity2 : AppCompatActivity() {
                 checkAllTimeRanges()
             }, hour, minute, true)
             timePickerDialog.show()
+            Log.d("DND","$timePickerDialog")
+
         }
     }
     private fun saveAllTimes() {
