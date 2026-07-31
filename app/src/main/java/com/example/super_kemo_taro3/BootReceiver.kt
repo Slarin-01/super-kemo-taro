@@ -39,8 +39,14 @@ class BootReceiver : BroadcastReceiver() {
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+// USE_EXACT_ALARMがあれば権限チェック不要
+// SCHEDULE_EXACT_ALARMのみの場合はチェックが必要
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
+            val hasExact = context.checkSelfPermission(
+                android.Manifest.permission.USE_EXACT_ALARM
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (!hasExact && !alarmManager.canScheduleExactAlarms()) {
                 Log.d("DND", "正確なアラームの権限なし")
                 return
             }
