@@ -19,8 +19,8 @@ import java.util.Calendar
 class MainActivity : AppCompatActivity() {
 
     private val slotTimes = mapOf(
-        1 to Pair(Pair(8, 40),  Pair(9,  30)),
-        2 to Pair(Pair(9, 40),  Pair(10, 30)),
+        1 to Pair(Pair(8, 40), Pair(9, 30)),
+        2 to Pair(Pair(9, 40), Pair(10, 30)),
         3 to Pair(Pair(10, 45), Pair(11, 35)),
         4 to Pair(Pair(11, 45), Pair(12, 35)),
         5 to Pair(Pair(13, 25), Pair(14, 15)),
@@ -179,6 +179,7 @@ class MainActivity : AppCompatActivity() {
         }
         button.isClickable = false
     }
+
     private fun scheduleSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
@@ -254,8 +255,14 @@ class MainActivity : AppCompatActivity() {
             offIntent
         )
 
-        Log.d("DND", "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${java.util.Date(endCal.timeInMillis)}")
+        Log.d(
+            "DND",
+            "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${
+                java.util.Date(endCal.timeInMillis)
+            }"
+        )
     }
+
     private fun cancelSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
