@@ -1,12 +1,9 @@
 package com.example.super_kemo_taro3
 
-import android.app.AlarmManager
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -79,11 +76,6 @@ class MainActivity : AppCompatActivity() {
         tvStatus.text = getDndStatus()
     }
 
-    private fun saveBlockedSlots() {
-        preferences.edit()
-            .putStringSet("blocked_slots", blockedSlots.toSet())
-            .apply()
-    }
 
     private fun loadBlockedSlots() {
         val savedSlots =
@@ -180,106 +172,4 @@ class MainActivity : AppCompatActivity() {
         button.isClickable = false
     }
 
-    private fun scheduleSlot(slotKey: String) {
-        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                return
-            }
-        }
-
-        val parts = slotKey.split("_")
-        val day = parts[0]
-        val slot = parts[1].toInt()
-
-        val calDay = dayMap[day] ?: return
-        val times = slotTimes[slot] ?: return
-
-        // 開始時刻（ミュートON）
-        val startCal = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, calDay)
-            set(Calendar.HOUR_OF_DAY, times.first.first)
-            set(Calendar.MINUTE, times.first.second)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis < System.currentTimeMillis()) {
-                add(Calendar.WEEK_OF_YEAR, 1)
-            }
-        }
-
-        val onIntentBase = Intent(this, DndReceiver::class.java).apply {
-            action = DndReceiver.ACTION_DND_ON
-        }
-        onIntentBase.putExtra("requestCode", slotKey.hashCode())
-        onIntentBase.putExtra("scheduledTime", startCal.timeInMillis)
-        val onIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode(),
-            onIntentBase,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            startCal.timeInMillis,
-            onIntent
-        )
-
-        // 終了時刻（ミュートOFF）
-        val endCal = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, calDay)
-            set(Calendar.HOUR_OF_DAY, times.second.first)
-            set(Calendar.MINUTE, times.second.second)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis < System.currentTimeMillis()) {
-                add(Calendar.WEEK_OF_YEAR, 1)
-            }
-        }
-
-        val offIntentBase = Intent(this, DndReceiver::class.java).apply {
-            action = DndReceiver.ACTION_DND_OFF
-        }
-        offIntentBase.putExtra("requestCode", slotKey.hashCode() + 1000)
-        offIntentBase.putExtra("scheduledTime", endCal.timeInMillis)
-        val offIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode() + 1000,
-            offIntentBase,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            endCal.timeInMillis,
-            offIntent
-        )
-
-        Log.d(
-            "DND",
-            "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${
-                java.util.Date(endCal.timeInMillis)
-            }"
-        )
-    }
-
-    private fun cancelSlot(slotKey: String) {
-        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-
-        val onIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode(),
-            Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_ON },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(onIntent)
-
-        val offIntent = PendingIntent.getBroadcast(
-            this,
-            slotKey.hashCode() + 1000,
-            Intent(this, DndReceiver::class.java).apply { action = DndReceiver.ACTION_DND_OFF },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(offIntent)
-    }
 }
