@@ -1,5 +1,7 @@
 package com.example.super_kemo_taro3
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
@@ -13,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import java.util.Calendar
 
 class MainActivity2 : AppCompatActivity() {
     class TimePickerItem(
@@ -21,6 +24,7 @@ class MainActivity2 : AppCompatActivity() {
         val defaultHour: Int,
         val defaultMinute: Int
     )
+
     val timePickerItems = listOf(
         TimePickerItem(R.id.time_start_1, "time_start_1", 8, 40),
         TimePickerItem(R.id.time_end_1, "time_end_1", 9, 30),
@@ -39,6 +43,7 @@ class MainActivity2 : AppCompatActivity() {
         TimePickerItem(R.id.time_start_8, "time_start_8", 16, 30),
         TimePickerItem(R.id.time_end_8, "time_end_8", 17, 20)
     )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -74,6 +79,7 @@ class MainActivity2 : AppCompatActivity() {
             showResetConfirmDialog()
         }
     }
+
     //シーン変更確認
     private fun showSaveConfirmDialog() {
         AlertDialog.Builder(this)
@@ -88,6 +94,7 @@ class MainActivity2 : AppCompatActivity() {
             .setNegativeButton("キャンセル", null)
             .show()
     }
+
     private fun showErrorDialog() {
         AlertDialog.Builder(this)
             .setTitle("入力エラー")
@@ -95,6 +102,7 @@ class MainActivity2 : AppCompatActivity() {
             .setPositiveButton("OK", null)
             .show()
     }
+
     private fun showNotSaveConfirmDialog() {
         AlertDialog.Builder(this)
             .setTitle("確認")
@@ -107,11 +115,12 @@ class MainActivity2 : AppCompatActivity() {
             .setNegativeButton("キャンセル", null)
             .show()
     }
+
     private fun showResetConfirmDialog() {
         AlertDialog.Builder(this)
             .setTitle("確認")
             .setMessage("初期設定である岡山大学の授業に合わせたタイムテーブルに戻しますか？")
-            .setPositiveButton("初期設定に戻す"){ _, _ ->
+            .setPositiveButton("初期設定に戻す") { _, _ ->
                 resetTimesToDefault()
             }
             .setNegativeButton("キャンセル", null)
@@ -137,6 +146,7 @@ class MainActivity2 : AppCompatActivity() {
         val m = parts[1].toIntOrNull() ?: return null
         return h * 60 + m
     }
+
     //エラー確認
     private fun checkAllTimeRanges(): Boolean {
         var hasError = false
@@ -209,10 +219,11 @@ class MainActivity2 : AppCompatActivity() {
                 checkAllTimeRanges()
             }, hour, minute, true)
             timePickerDialog.show()
-            Log.d("DND","$timePickerDialog")
+            Log.d("DND", "$timePickerDialog")
 
         }
     }
+
     private fun saveAllTimes() {
         val sharedPref = getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
@@ -220,10 +231,117 @@ class MainActivity2 : AppCompatActivity() {
         for (item in timePickerItems) {
             val editText = findViewById<EditText>(item.editTextId)
             if (editText != null) {
-                    // 現在画面に表示されている文字列を取得
                 editor.putString(item.saveKey, editText.text.toString())
             }
         }
-        editor.apply() //保存の確定
+        editor.apply()
+
+        // アラームを再登録する
+        reschedulAllAlarms()
+    }
+
+    private fun reschedulAllAlarms() {
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                return
+            }
+        }
+
+        val sharedPref = getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
+        val timetablePrefs = getSharedPreferences("timetable_settings", Context.MODE_PRIVATE)
+        val blockedSlots = timetablePrefs.getStringSet("blocked_slots", emptySet()) ?: emptySet()
+
+        val dayMap = mapOf(
+            "MON" to Calendar.MONDAY,
+            "TUE" to Calendar.TUESDAY,
+            "WED" to Calendar.WEDNESDAY,
+            "THU" to Calendar.THURSDAY,
+            "FRI" to Calendar.FRIDAY
+        )
+
+        for (slotKey in blockedSlots) {
+            val parts = slotKey.split("_")
+            if (parts.size != 2) continue
+            val day = parts[0]
+            val slot = parts[1].toIntOrNull() ?: continue
+            val calDay = dayMap[day] ?: continue
+
+            // 保存した時刻を取得
+            val startStr = sharedPref.getString("time_start_$slot", null) ?: continue
+            val endStr = sharedPref.getString("time_end_$slot", null) ?: continue
+
+            val startParts = startStr.split(":")
+            val endParts = endStr.split(":")
+            if (startParts.size != 2 || endParts.size != 2) continue
+
+            val startHour = startParts[0].toIntOrNull() ?: continue
+            val startMin = startParts[1].toIntOrNull() ?: continue
+            val endHour = endParts[0].toIntOrNull() ?: continue
+            val endMin = endParts[1].toIntOrNull() ?: continue
+
+            // 開始時刻（ミュートON）
+            val startCal = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_WEEK, calDay)
+                set(Calendar.HOUR_OF_DAY, startHour)
+                set(Calendar.MINUTE, startMin)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis < System.currentTimeMillis()) {
+                    add(Calendar.WEEK_OF_YEAR, 1)
+                }
+            }
+
+            val onIntent = Intent(this, DndReceiver::class.java).apply {
+                action = DndReceiver.ACTION_DND_ON
+            }
+            onIntent.putExtra("requestCode", slotKey.hashCode())
+            onIntent.putExtra("scheduledTime", startCal.timeInMillis)
+            val onPending = PendingIntent.getBroadcast(
+                this, slotKey.hashCode(), onIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                startCal.timeInMillis,
+                onPending
+            )
+
+            // 終了時刻（ミュートOFF）
+            val endCal = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_WEEK, calDay)
+                set(Calendar.HOUR_OF_DAY, endHour)
+                set(Calendar.MINUTE, endMin)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis < System.currentTimeMillis()) {
+                    add(Calendar.WEEK_OF_YEAR, 1)
+                }
+            }
+
+            val offIntent = Intent(this, DndReceiver::class.java).apply {
+                action = DndReceiver.ACTION_DND_OFF
+            }
+            offIntent.putExtra("requestCode", slotKey.hashCode() + 1000)
+            offIntent.putExtra("scheduledTime", endCal.timeInMillis)
+            val offPending = PendingIntent.getBroadcast(
+                this, slotKey.hashCode() + 1000, offIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                endCal.timeInMillis,
+                offPending
+            )
+
+            Log.d(
+                "DND",
+                "時刻変更後再登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${
+                    java.util.Date(endCal.timeInMillis)
+                }"
+            )
+        }
     }
 }
