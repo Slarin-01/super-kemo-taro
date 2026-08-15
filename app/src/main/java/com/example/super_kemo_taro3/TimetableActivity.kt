@@ -15,8 +15,8 @@ import java.util.Calendar
 class TimetableActivity : AppCompatActivity() {
 
     private val slotTimes = mapOf(
-        1 to Pair(Pair(8, 40),  Pair(9,  30)),
-        2 to Pair(Pair(9, 40),  Pair(10, 30)),
+        1 to Pair(Pair(8, 40), Pair(9, 30)),
+        2 to Pair(Pair(9, 40), Pair(10, 30)),
         3 to Pair(Pair(10, 45), Pair(11, 35)),
         4 to Pair(Pair(11, 45), Pair(12, 35)),
         5 to Pair(Pair(13, 25), Pair(14, 15)),
@@ -168,7 +168,11 @@ class TimetableActivity : AppCompatActivity() {
             this, slotKey.hashCode(), onIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, startCal.timeInMillis, onIntent)
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            startCal.timeInMillis,
+            onIntent
+        )
 
         val endCal = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, calDay)
@@ -190,9 +194,18 @@ class TimetableActivity : AppCompatActivity() {
             this, slotKey.hashCode() + 1000, offIntentBase,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endCal.timeInMillis, offIntent)
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            endCal.timeInMillis,
+            offIntent
+        )
 
-        Log.d("DND", "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${java.util.Date(endCal.timeInMillis)}")
+        Log.d(
+            "DND",
+            "アラーム登録: $slotKey ON→${java.util.Date(startCal.timeInMillis)} OFF→${
+                java.util.Date(endCal.timeInMillis)
+            }"
+        )
     }
 
     private fun cancelSlot(slotKey: String) {
