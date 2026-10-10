@@ -5,15 +5,18 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.util.Calendar
 
+/** ミュートする曜日・時限を選ぶ画面。選択時に保存とアラーム登録・取消を行う。 */
 class TimetableActivity : AppCompatActivity() {
 
+    // 時刻がまだカスタム保存されていない時限で使う、開始・終了の既定値。
     private val slotTimes = mapOf(
         1 to Pair(Pair(8, 40), Pair(9, 30)),
         2 to Pair(Pair(9, 40), Pair(10, 30)),
@@ -25,6 +28,7 @@ class TimetableActivity : AppCompatActivity() {
         8 to Pair(Pair(16, 30), Pair(17, 20))
     )
 
+    // MON〜FRIという保存用キーを、アラーム日時の計算に使う曜日定数へ対応付ける。
     private val dayMap = mapOf(
         "MON" to Calendar.MONDAY,
         "TUE" to Calendar.TUESDAY,
@@ -33,107 +37,48 @@ class TimetableActivity : AppCompatActivity() {
         "FRI" to Calendar.FRIDAY
     )
 
-    private val blockedSlots = mutableSetOf<String>()
-
-    private val preferences by lazy {
-        getSharedPreferences("timetable_settings", MODE_PRIVATE)
-    }
+    // 「MON_1＝月曜1限」のようなキーの集合。集合を更新するとComposeの選択色も変わる。
+    private var blockedSlots by mutableStateOf<Set<String>>(emptySet())
+    private val preferences by lazy { getSharedPreferences("timetable_settings", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_timetable)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
         loadBlockedSlots()
-        setupTimetableButtons()
-    }
-
-    private fun saveBlockedSlots() {
-        preferences.edit()
-            .putStringSet("blocked_slots", blockedSlots.toSet())
-            .apply()
-    }
-
-    private fun loadBlockedSlots() {
-        val savedSlots = preferences.getStringSet("blocked_slots", emptySet()) ?: emptySet()
-        blockedSlots.clear()
-        blockedSlots.addAll(savedSlots)
-    }
-
-    private fun setupTimetableButtons() {
-        bindTimetableButton(R.id.btn_mon_1, "MON_1")
-        bindTimetableButton(R.id.btn_mon_2, "MON_2")
-        bindTimetableButton(R.id.btn_mon_3, "MON_3")
-        bindTimetableButton(R.id.btn_mon_4, "MON_4")
-        bindTimetableButton(R.id.btn_mon_5, "MON_5")
-        bindTimetableButton(R.id.btn_mon_6, "MON_6")
-        bindTimetableButton(R.id.btn_mon_7, "MON_7")
-        bindTimetableButton(R.id.btn_mon_8, "MON_8")
-        bindTimetableButton(R.id.btn_tue_1, "TUE_1")
-        bindTimetableButton(R.id.btn_tue_2, "TUE_2")
-        bindTimetableButton(R.id.btn_tue_3, "TUE_3")
-        bindTimetableButton(R.id.btn_tue_4, "TUE_4")
-        bindTimetableButton(R.id.btn_tue_5, "TUE_5")
-        bindTimetableButton(R.id.btn_tue_6, "TUE_6")
-        bindTimetableButton(R.id.btn_tue_7, "TUE_7")
-        bindTimetableButton(R.id.btn_tue_8, "TUE_8")
-        bindTimetableButton(R.id.btn_wed_1, "WED_1")
-        bindTimetableButton(R.id.btn_wed_2, "WED_2")
-        bindTimetableButton(R.id.btn_wed_3, "WED_3")
-        bindTimetableButton(R.id.btn_wed_4, "WED_4")
-        bindTimetableButton(R.id.btn_wed_5, "WED_5")
-        bindTimetableButton(R.id.btn_wed_6, "WED_6")
-        bindTimetableButton(R.id.btn_wed_7, "WED_7")
-        bindTimetableButton(R.id.btn_wed_8, "WED_8")
-        bindTimetableButton(R.id.btn_thu_1, "THU_1")
-        bindTimetableButton(R.id.btn_thu_2, "THU_2")
-        bindTimetableButton(R.id.btn_thu_3, "THU_3")
-        bindTimetableButton(R.id.btn_thu_4, "THU_4")
-        bindTimetableButton(R.id.btn_thu_5, "THU_5")
-        bindTimetableButton(R.id.btn_thu_6, "THU_6")
-        bindTimetableButton(R.id.btn_thu_7, "THU_7")
-        bindTimetableButton(R.id.btn_thu_8, "THU_8")
-        bindTimetableButton(R.id.btn_fri_1, "FRI_1")
-        bindTimetableButton(R.id.btn_fri_2, "FRI_2")
-        bindTimetableButton(R.id.btn_fri_3, "FRI_3")
-        bindTimetableButton(R.id.btn_fri_4, "FRI_4")
-        bindTimetableButton(R.id.btn_fri_5, "FRI_5")
-        bindTimetableButton(R.id.btn_fri_6, "FRI_6")
-        bindTimetableButton(R.id.btn_fri_7, "FRI_7")
-        bindTimetableButton(R.id.btn_fri_8, "FRI_8")
-    }
-
-    private fun bindTimetableButton(buttonId: Int, slotKey: String) {
-        val button = findViewById<Button>(buttonId)
-
-        if (slotKey in blockedSlots) {
-            button.setBackgroundColor(android.graphics.Color.GREEN)
-        } else {
-            button.setBackgroundColor(android.graphics.Color.LTGRAY)
-        }
-
-        button.setOnClickListener {
-            if (slotKey in blockedSlots) {
-                blockedSlots.remove(slotKey)
-                button.setBackgroundColor(android.graphics.Color.LTGRAY)
-                cancelSlot(slotKey)
-            } else {
-                blockedSlots.add(slotKey)
-                button.setBackgroundColor(android.graphics.Color.GREEN)
-                scheduleSlot(slotKey)
+        setContent {
+            AppScreen {
+                TimetableScreen(blockedSlots, ::toggleSlot, ::finish)
             }
-            saveBlockedSlots()
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadBlockedSlots()
+    }
+
+    /** 保存されたミュート対象を読み込む。toSetで保存データとは別の集合として扱う。 */
+    private fun loadBlockedSlots() {
+        blockedSlots = preferences.getStringSet("blocked_slots", emptySet())?.toSet() ?: emptySet()
+    }
+
+    /** タップした枠の選択を切り替え、アラームを更新したうえで選択状態を保存する。 */
+    private fun toggleSlot(slotKey: String) {
+        if (slotKey in blockedSlots) {
+            blockedSlots = blockedSlots - slotKey
+            cancelSlot(slotKey)
+        } else {
+            blockedSlots = blockedSlots + slotKey
+            scheduleSlot(slotKey)
+        }
+        preferences.edit().putStringSet("blocked_slots", blockedSlots).apply()
+    }
+
+    /** 1つの曜日・時限について、開始時のミュートと終了時の解除を予約する。 */
     private fun scheduleSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
+        // Android 12以降では、指定時刻に正確に実行するアラームの権限も確認する。
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             if (!alarmManager.canScheduleExactAlarms()) {
                 startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
@@ -141,17 +86,48 @@ class TimetableActivity : AppCompatActivity() {
             }
         }
 
+        // MON_1のようなキーから曜日と時限番号を取り出し、曜日定数へ変換する。
         val parts = slotKey.split("_")
         val day = parts[0]
         val slot = parts[1].toInt()
 
         val calDay = dayMap[day] ?: return
-        val times = slotTimes[slot] ?: return
 
+        val sharedPref = getSharedPreferences("timetable_prefs", MODE_PRIVATE)
+        val defaultTimes = slotTimes[slot] ?: return
+
+        // カスタム保存された時刻を優先し、未設定・読み取れない数値は既定値で補う。
+        val startStr = sharedPref.getString("time_start_$slot", null)
+        val endStr = sharedPref.getString("time_end_$slot", null)
+
+        val startHour: Int
+        val startMin: Int
+        val endHour: Int
+        val endMin: Int
+
+        if (startStr != null && startStr.contains(":")) {
+            val p = startStr.split(":")
+            startHour = p[0].toIntOrNull() ?: defaultTimes.first.first
+            startMin = p[1].toIntOrNull() ?: defaultTimes.first.second
+        } else {
+            startHour = defaultTimes.first.first
+            startMin = defaultTimes.first.second
+        }
+
+        if (endStr != null && endStr.contains(":")) {
+            val p = endStr.split(":")
+            endHour = p[0].toIntOrNull() ?: defaultTimes.second.first
+            endMin = p[1].toIntOrNull() ?: defaultTimes.second.second
+        } else {
+            endHour = defaultTimes.second.first
+            endMin = defaultTimes.second.second
+        }
+
+        // 今週の指定曜日・開始時刻を求め、過去になっている場合は翌週に進める。
         val startCal = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, calDay)
-            set(Calendar.HOUR_OF_DAY, times.first.first)
-            set(Calendar.MINUTE, times.first.second)
+            set(Calendar.HOUR_OF_DAY, startHour)
+            set(Calendar.MINUTE, startMin)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis < System.currentTimeMillis()) {
@@ -159,9 +135,11 @@ class TimetableActivity : AppCompatActivity() {
             }
         }
 
+        // アラーム発火時にDndReceiverへミュート開始を通知する。
         val onIntentBase = Intent(this, DndReceiver::class.java).apply {
             action = DndReceiver.ACTION_DND_ON
         }
+        // 曜日・時限から作る識別子と予定時刻を渡し、Receiverが翌週分を登録できるようにする。
         onIntentBase.putExtra("requestCode", slotKey.hashCode())
         onIntentBase.putExtra("scheduledTime", startCal.timeInMillis)
         val onIntent = PendingIntent.getBroadcast(
@@ -174,10 +152,11 @@ class TimetableActivity : AppCompatActivity() {
             onIntent
         )
 
+        // 終了時刻には解除を予約する。開始用とは別のactionとコードを使う。
         val endCal = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, calDay)
-            set(Calendar.HOUR_OF_DAY, times.second.first)
-            set(Calendar.MINUTE, times.second.second)
+            set(Calendar.HOUR_OF_DAY, endHour)
+            set(Calendar.MINUTE, endMin)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis < System.currentTimeMillis()) {
@@ -208,6 +187,7 @@ class TimetableActivity : AppCompatActivity() {
         )
     }
 
+    /** 登録時と同じrequestCode・actionのPendingIntentを指定し、開始・終了の両予約を取り消す。 */
     private fun cancelSlot(slotKey: String) {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 

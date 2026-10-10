@@ -1,175 +1,113 @@
 package com.example.super_kemo_taro3
 
+import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Button
-import android.widget.TextView
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.util.Calendar
 
-
+/** 時間割を閲覧するホーム画面。保存済み設定の読み込みと、一時停止・テーマ切り替えを行う。 */
 class MainActivity : AppCompatActivity() {
-
-    private val slotTimes = mapOf(
-        1 to Pair(Pair(8, 40), Pair(9, 30)),
-        2 to Pair(Pair(9, 40), Pair(10, 30)),
-        3 to Pair(Pair(10, 45), Pair(11, 35)),
-        4 to Pair(Pair(11, 45), Pair(12, 35)),
-        5 to Pair(Pair(13, 25), Pair(14, 15)),
-        6 to Pair(Pair(14, 25), Pair(15, 15)),
-        7 to Pair(Pair(15, 30), Pair(16, 20)),
-        8 to Pair(Pair(16, 30), Pair(17, 20))
-    )
-
-    private val dayMap = mapOf(
-        "MON" to Calendar.MONDAY,
-        "TUE" to Calendar.TUESDAY,
-        "WED" to Calendar.WEDNESDAY,
-        "THU" to Calendar.THURSDAY,
-        "FRI" to Calendar.FRIDAY
-    )
-
-    private val blockedSlots = mutableSetOf<String>()
-
-    private val preferences by lazy {
-        getSharedPreferences("timetable_settings", MODE_PRIVATE)
-    }
-
-    private lateinit var tvStatus: TextView
+    // Composeが変更を検知できる状態として保持し、設定を読み直すと画面にも反映する。
+    private var blockedSlots by mutableStateOf<Set<String>>(emptySet())
+    private var paused by mutableStateOf(false)
+    private val preferences by lazy { getSharedPreferences("timetable_settings", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        refreshSettings()
+        // XMLの代わりにComposeで画面を構築し、ボタン操作をActivityの処理へ結び付ける。
+        setContent {
+            AppScreen {
+                MainScreen(
+                    blockedSlots = blockedSlots,
+                    paused = paused,
+                    onTogglePause = {
+                        togglePauseUntilSunday()
+                        refreshSettings()
+                    },
+                    onToggleTheme = ::toggleTheme,
+                    onEdit = { startActivity(Intent(this, MainActivity3::class.java)) }
+                )
+            }
         }
-
         authchk()
-        loadBlockedSlots()
-        setupTimetableButtons()
-
-        tvStatus = findViewById(R.id.tvStatus)
-        tvStatus.text = getDndStatus()
-
-        findViewById<Button>(R.id.btnToggleDnd).setOnClickListener {
-            tvStatus.text = toggleDnd()
-        }
-
-        //シーン変更ボタン
-        findViewById<Button>(R.id.btn_edit).setOnClickListener {
-            startActivity(Intent(this, MainActivity3::class.java))
-        }
     }
 
+    // 編集画面や権限設定から戻ったとき、時間割と一時停止状態を最新の保存内容に合わせる。
     override fun onResume() {
         super.onResume()
-        loadBlockedSlots()
-        setupTimetableButtons()
-        tvStatus.text = getDndStatus()
+        refreshSettings()
     }
 
-
-    private fun loadBlockedSlots() {
-        val savedSlots =
-            preferences.getStringSet("blocked_slots", emptySet()) ?: emptySet()
-        blockedSlots.clear()
-        blockedSlots.addAll(savedSlots)
+    /** ミュート対象の曜日・時限と、一時停止の期限を保存設定から読み直す。 */
+    private fun refreshSettings() {
+        blockedSlots = preferences.getStringSet("blocked_slots", emptySet())?.toSet() ?: emptySet()
+        paused = isPausedUntilSunday()
     }
 
-    private fun toggleDnd(): String {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!nm.isNotificationPolicyAccessGranted) {
-            return "おやすみモードへのアクセスが許可されていません。設定画面で許可してください。"
-        }
-        return if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-            nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-            "通知モード: ON"
+    /** 明暗モードの選択を保存し、ActivityとComposeに適用する。 */
+    private fun toggleTheme() {
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        getSharedPreferences("theme_prefs", MODE_PRIVATE).edit()
+            .putBoolean("is_dark_mode", !isDark).apply()
+        AppCompatDelegate.setDefaultNightMode(
+            if (isDark) AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
+        )
+    }
+
+    /** 直近の日曜日の23:59:59.999を求める。今日が日曜日の場合は当日の終わりになる。 */
+    private fun getNextSundayEndTime(): Long {
+        val cal = Calendar.getInstance()
+        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+        val daysUntilSunday = if (dayOfWeek == Calendar.SUNDAY) 0 else Calendar.SATURDAY - dayOfWeek + 1
+        cal.add(Calendar.DAY_OF_YEAR, daysUntilSunday)
+        cal.set(Calendar.HOUR_OF_DAY, 23)
+        cal.set(Calendar.MINUTE, 59)
+        cal.set(Calendar.SECOND, 59)
+        cal.set(Calendar.MILLISECOND, 999)
+        return cal.timeInMillis
+    }
+
+    // 保存された期限を過ぎると、設定値が残っていても一時停止は解除扱いになる。
+    private fun isPausedUntilSunday(): Boolean =
+        System.currentTimeMillis() < preferences.getLong("pause_until_sunday_time", 0L)
+
+    /** 一時停止を切り替える。有効にすると現在のミュートを解除し、期限をReceiverへ共有する。 */
+    private fun togglePauseUntilSunday() {
+        if (isPausedUntilSunday()) {
+            preferences.edit().remove("pause_until_sunday_time").apply()
         } else {
-            nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-            "通知モード: OFF"
+            preferences.edit().putLong("pause_until_sunday_time", getNextSundayEndTime()).apply()
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            if (nm.isNotificationPolicyAccessGranted) {
+                nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+            }
         }
     }
 
-    private fun getDndStatus(): String {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!nm.isNotificationPolicyAccessGranted) {
-            return "通知モード：権限が無いので確認できません"
-        }
-        return if (nm.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-            "通知モード：OFF"
-        } else {
-            "通知モード：ON"
-        }
-    }
-
+    /** 通知モードの変更権限と正確なアラームの権限を確認し、不足時は端末の設定を開く。 */
     private fun authchk() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (!nm.isNotificationPolicyAccessGranted) {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
         }
-    }
-
-    private fun setupTimetableButtons() {
-        bindTimetableButton(R.id.btn_mon_1, "MON_1")
-        bindTimetableButton(R.id.btn_mon_2, "MON_2")
-        bindTimetableButton(R.id.btn_mon_3, "MON_3")
-        bindTimetableButton(R.id.btn_mon_4, "MON_4")
-        bindTimetableButton(R.id.btn_mon_5, "MON_5")
-        bindTimetableButton(R.id.btn_mon_6, "MON_6")
-        bindTimetableButton(R.id.btn_mon_7, "MON_7")
-        bindTimetableButton(R.id.btn_mon_8, "MON_8")
-        bindTimetableButton(R.id.btn_tue_1, "TUE_1")
-        bindTimetableButton(R.id.btn_tue_2, "TUE_2")
-        bindTimetableButton(R.id.btn_tue_3, "TUE_3")
-        bindTimetableButton(R.id.btn_tue_4, "TUE_4")
-        bindTimetableButton(R.id.btn_tue_5, "TUE_5")
-        bindTimetableButton(R.id.btn_tue_6, "TUE_6")
-        bindTimetableButton(R.id.btn_tue_7, "TUE_7")
-        bindTimetableButton(R.id.btn_tue_8, "TUE_8")
-        bindTimetableButton(R.id.btn_wed_1, "WED_1")
-        bindTimetableButton(R.id.btn_wed_2, "WED_2")
-        bindTimetableButton(R.id.btn_wed_3, "WED_3")
-        bindTimetableButton(R.id.btn_wed_4, "WED_4")
-        bindTimetableButton(R.id.btn_wed_5, "WED_5")
-        bindTimetableButton(R.id.btn_wed_6, "WED_6")
-        bindTimetableButton(R.id.btn_wed_7, "WED_7")
-        bindTimetableButton(R.id.btn_wed_8, "WED_8")
-        bindTimetableButton(R.id.btn_thu_1, "THU_1")
-        bindTimetableButton(R.id.btn_thu_2, "THU_2")
-        bindTimetableButton(R.id.btn_thu_3, "THU_3")
-        bindTimetableButton(R.id.btn_thu_4, "THU_4")
-        bindTimetableButton(R.id.btn_thu_5, "THU_5")
-        bindTimetableButton(R.id.btn_thu_6, "THU_6")
-        bindTimetableButton(R.id.btn_thu_7, "THU_7")
-        bindTimetableButton(R.id.btn_thu_8, "THU_8")
-        bindTimetableButton(R.id.btn_fri_1, "FRI_1")
-        bindTimetableButton(R.id.btn_fri_2, "FRI_2")
-        bindTimetableButton(R.id.btn_fri_3, "FRI_3")
-        bindTimetableButton(R.id.btn_fri_4, "FRI_4")
-        bindTimetableButton(R.id.btn_fri_5, "FRI_5")
-        bindTimetableButton(R.id.btn_fri_6, "FRI_6")
-        bindTimetableButton(R.id.btn_fri_7, "FRI_7")
-        bindTimetableButton(R.id.btn_fri_8, "FRI_8")
-    }
-
-    private fun bindTimetableButton(buttonId: Int, slotKey: String) {
-        val button = findViewById<Button>(buttonId)
-
-        // 色だけ反映・タップ不可
-        if (slotKey in blockedSlots) {
-            button.setBackgroundColor(android.graphics.Color.GREEN)
-        } else {
-            button.setBackgroundColor(android.graphics.Color.LTGRAY)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+            }
         }
-        button.isClickable = false
     }
-
 }

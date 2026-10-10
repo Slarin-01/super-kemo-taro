@@ -2,244 +2,77 @@ package com.example.super_kemo_taro3
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.util.Calendar
 
+/** 時限カスタム画面。編集中の時刻を管理し、保存時にミュートの予定を登録し直す。 */
 class MainActivity2 : AppCompatActivity() {
-    class TimePickerItem(
-        val editTextId: Int,
-        val saveKey: String,
-        val defaultHour: Int,
-        val defaultMinute: Int
-    )
-
-    val timePickerItems = listOf(
-        TimePickerItem(R.id.time_start_1, "time_start_1", 8, 40),
-        TimePickerItem(R.id.time_end_1, "time_end_1", 9, 30),
-        TimePickerItem(R.id.time_start_2, "time_start_2", 9, 40),
-        TimePickerItem(R.id.time_end_2, "time_end_2", 10, 30),
-        TimePickerItem(R.id.time_start_3, "time_start_3", 10, 45),
-        TimePickerItem(R.id.time_end_3, "time_end_3", 11, 35),
-        TimePickerItem(R.id.time_start_4, "time_start_4", 11, 45),
-        TimePickerItem(R.id.time_end_4, "time_end_4", 12, 35),
-        TimePickerItem(R.id.time_start_5, "time_start_5", 13, 15),
-        TimePickerItem(R.id.time_end_5, "time_end_5", 14, 25),
-        TimePickerItem(R.id.time_start_6, "time_start_6", 14, 25),
-        TimePickerItem(R.id.time_end_6, "time_end_6", 15, 15),
-        TimePickerItem(R.id.time_start_7, "time_start_7", 15, 30),
-        TimePickerItem(R.id.time_end_7, "time_end_7", 16, 20),
-        TimePickerItem(R.id.time_start_8, "time_start_8", 16, 30),
-        TimePickerItem(R.id.time_end_8, "time_end_8", 17, 20)
-    )
+    // 開始・終了時刻を交互に保持する。保存ボタンを押すまではSharedPreferencesを書き換えない。
+    private var times by mutableStateOf<List<String>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main2)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
-        for (item in timePickerItems) {
-            setupTimePicker(item)
-        }
-        checkAllTimeRanges()
-
-        //シーン変更ボタン
-        val btn_change_scene2_save = findViewById<Button>(R.id.btn_change_scene2_save)
-        btn_change_scene2_save.setOnClickListener {
-            if (checkAllTimeRanges()) {
-                showErrorDialog()
-            } else {
-                showSaveConfirmDialog()
+        val sharedPref = getSharedPreferences("timetable_prefs", MODE_PRIVATE)
+        // 画面回転などの復元値を優先し、なければ保存済み時刻、さらに未設定なら初期値を使う。
+        times = savedInstanceState?.getStringArrayList("editing_times")
+            ?.takeIf { it.size == timeSettings.size }
+            ?: timeSettings.map { sharedPref.getString(it.saveKey, null) ?: it.defaultTime }
+        setContent {
+            AppScreen {
+                TimeSettingsScreen(
+                    times = times,
+                    onTimeChange = { index, value ->
+                        // 新しいリストを状態に代入し、Composeに入力値とエラー表示の更新を知らせる。
+                        times = times.toMutableList().also { it[index] = value }
+                    },
+                    onSave = {
+                        if (invalidTimeIndices(times).isEmpty()) {
+                            saveAllTimes()
+                            returnToMain()
+                        }
+                    },
+                    onReset = { times = timeSettings.map { it.defaultTime } },
+                    onDiscard = ::returnToMain
+                )
             }
         }
-
-        val btn_change_scene2_not_save = findViewById<Button>(R.id.btn_change_scene2_not_save)
-        btn_change_scene2_not_save.setOnClickListener {
-            showNotSaveConfirmDialog()
-        }
-
-        val btn_reset = findViewById<Button>(R.id.btn_reset)
-        btn_reset.setOnClickListener {
-            showResetConfirmDialog()
-        }
     }
 
-    //シーン変更確認
-    private fun showSaveConfirmDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("確認")
-            .setMessage("変更した時間を保存しますか？")
-            .setPositiveButton("保存する") { _, _ ->
-                saveAllTimes()
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            }
-            .setNegativeButton("キャンセル", null)
-            .show()
+    // 保存前の編集内容も、Activityが再作成されたときに復元できるようにする。
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putStringArrayList("editing_times", ArrayList(times))
+        super.onSaveInstanceState(outState)
     }
 
-    private fun showErrorDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("入力エラー")
-            .setMessage("時間の順番に矛盾があるか、他の時限と重複しています。赤いマークがついている場所を修正してください。")
-            .setPositiveButton("OK", null)
-            .show()
+    private fun returnToMain() {
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 
-    private fun showNotSaveConfirmDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("確認")
-            .setMessage("変更した時間を保存せず戻りますか？")
-            .setPositiveButton("保存せず戻る") { _, _ ->
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            }
-            .setNegativeButton("キャンセル", null)
-            .show()
-    }
-
-    private fun showResetConfirmDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("確認")
-            .setMessage("初期設定である岡山大学の授業に合わせたタイムテーブルに戻しますか？")
-            .setPositiveButton("初期設定に戻す") { _, _ ->
-                resetTimesToDefault()
-            }
-            .setNegativeButton("キャンセル", null)
-            .show()
-    }
-
-    private fun resetTimesToDefault() {
-        for (item in timePickerItems) {
-            val editText = findViewById<EditText>(item.editTextId)
-            if (editText != null) {
-                val defaultTime = String.format("%02d:%02d", item.defaultHour, item.defaultMinute)
-                editText.setText(defaultTime)
-            }
-        }
-        checkAllTimeRanges()
-    }
-
-    //エラー確認の準備
-    private fun timeToMinutes(timeStr: String): Int? {
-        if (!timeStr.contains(":")) return null
-        val parts = timeStr.split(":")
-        val h = parts[0].toIntOrNull() ?: return null
-        val m = parts[1].toIntOrNull() ?: return null
-        return h * 60 + m
-    }
-
-    //エラー確認
-    private fun checkAllTimeRanges(): Boolean {
-        var hasError = false
-        val errorIcon = ContextCompat.getDrawable(this, android.R.drawable.ic_dialog_alert)
-        errorIcon?.setTint(ContextCompat.getColor(this, android.R.color.holo_red_dark))
-        // アイコンのリセット
-        for (item in timePickerItems) {
-            val et = findViewById<EditText>(item.editTextId)
-            et?.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-        }
-        var prevEndMinutes: Int? = null
-
-        // 1限目〜8限目を順にチェック
-        for (i in 0 until timePickerItems.size step 2) {
-            val startItem = timePickerItems[i]
-            val endItem = timePickerItems[i + 1]
-
-            val startEt = findViewById<EditText>(startItem.editTextId) ?: continue
-            val endEt = findViewById<EditText>(endItem.editTextId) ?: continue
-
-            val startMins = timeToMinutes(startEt.text.toString())
-            val endMins = timeToMinutes(endEt.text.toString())
-
-            if (startMins != null && endMins != null) {
-                //同コマ内のエラー確認
-                if (startMins >= endMins) {
-                    endEt.setCompoundDrawablesWithIntrinsicBounds(null, null, errorIcon, null)
-                    hasError = true
-                }
-
-                // コマとの重複エラー確認
-                if (prevEndMinutes != null && prevEndMinutes > startMins) {
-                    startEt.setCompoundDrawablesWithIntrinsicBounds(null, null, errorIcon, null)
-                    hasError = true
-                }
-
-                prevEndMinutes = endMins
-            }
-        }
-
-        return hasError
-    }
-
-    private fun setupTimePicker(item: TimePickerItem) {
-        val editText = findViewById<EditText>(item.editTextId) ?: return
-
-        val sharedPref = getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
-        val savedTime = sharedPref.getString(item.saveKey, null)
-
-        if (savedTime != null) {
-            editText.setText(savedTime)
-        } else {
-            editText.setText(String.format("%02d:%02d", item.defaultHour, item.defaultMinute))
-        }
-
-        // ダイアログ表示(一時的)
-        editText.setOnClickListener {
-            val currentTime = editText.text.toString()
-            var hour = item.defaultHour
-            var minute = item.defaultMinute
-
-            if (currentTime.contains(":")) {
-                val parts = currentTime.split(":")
-                hour = parts[0].toIntOrNull() ?: item.defaultHour
-                minute = parts[1].toIntOrNull() ?: item.defaultMinute
-            }
-            val timePickerDialog = TimePickerDialog(this, { _, selectedHour, selectedMinute ->
-                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                editText.setText(formattedTime)
-                checkAllTimeRanges()
-            }, hour, minute, true)
-            timePickerDialog.show()
-            Log.d("DND", "$timePickerDialog")
-
-        }
-    }
-
+    /** 16個の時刻を従来の保存キーで保存し、新しい時刻に合わせてアラームを更新する。 */
     private fun saveAllTimes() {
-        val sharedPref = getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-
-        for (item in timePickerItems) {
-            val editText = findViewById<EditText>(item.editTextId)
-            if (editText != null) {
-                editor.putString(item.saveKey, editText.text.toString())
-            }
+        val editor = getSharedPreferences("timetable_prefs", MODE_PRIVATE).edit()
+        timeSettings.forEachIndexed { index, setting ->
+            editor.putString(
+                setting.saveKey,
+                times[index]
+            )
         }
         editor.apply()
-
-        // アラームを再登録する
         reschedulAllAlarms()
     }
 
+    /** ミュート対象として選択済みの全枠について、開始・終了のアラームを登録し直す。 */
     private fun reschedulAllAlarms() {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
 
@@ -254,6 +87,7 @@ class MainActivity2 : AppCompatActivity() {
         val timetablePrefs = getSharedPreferences("timetable_settings", Context.MODE_PRIVATE)
         val blockedSlots = timetablePrefs.getStringSet("blocked_slots", emptySet()) ?: emptySet()
 
+        // 保存された曜日の英字キーを、Calendarが扱う曜日定数に変換する。
         val dayMap = mapOf(
             "MON" to Calendar.MONDAY,
             "TUE" to Calendar.TUESDAY,
@@ -263,13 +97,13 @@ class MainActivity2 : AppCompatActivity() {
         )
 
         for (slotKey in blockedSlots) {
+            // 例: MON_1を「月曜日」と「1限」に分解。不正な保存データは読み飛ばす。
             val parts = slotKey.split("_")
             if (parts.size != 2) continue
             val day = parts[0]
             val slot = parts[1].toIntOrNull() ?: continue
             val calDay = dayMap[day] ?: continue
 
-            // 保存した時刻を取得
             val startStr = sharedPref.getString("time_start_$slot", null) ?: continue
             val endStr = sharedPref.getString("time_end_$slot", null) ?: continue
 
@@ -282,7 +116,7 @@ class MainActivity2 : AppCompatActivity() {
             val endHour = endParts[0].toIntOrNull() ?: continue
             val endMin = endParts[1].toIntOrNull() ?: continue
 
-            // 開始時刻（ミュートON）
+            // 指定曜日の開始時刻を求める。すでに過ぎていたら翌週に登録する。
             val startCal = Calendar.getInstance().apply {
                 set(Calendar.DAY_OF_WEEK, calDay)
                 set(Calendar.HOUR_OF_DAY, startHour)
@@ -297,6 +131,7 @@ class MainActivity2 : AppCompatActivity() {
             val onIntent = Intent(this, DndReceiver::class.java).apply {
                 action = DndReceiver.ACTION_DND_ON
             }
+            // 同じ曜日・時限・actionのPendingIntentを更新し、Receiverにも識別子と予定時刻を渡す。
             onIntent.putExtra("requestCode", slotKey.hashCode())
             onIntent.putExtra("scheduledTime", startCal.timeInMillis)
             val onPending = PendingIntent.getBroadcast(
@@ -309,7 +144,7 @@ class MainActivity2 : AppCompatActivity() {
                 onPending
             )
 
-            // 終了時刻（ミュートOFF）
+            // 終了時刻にはミュート解除を予約する。開始と同様、過去の時刻なら翌週にずらす。
             val endCal = Calendar.getInstance().apply {
                 set(Calendar.DAY_OF_WEEK, calDay)
                 set(Calendar.HOUR_OF_DAY, endHour)
@@ -324,6 +159,7 @@ class MainActivity2 : AppCompatActivity() {
             val offIntent = Intent(this, DndReceiver::class.java).apply {
                 action = DndReceiver.ACTION_DND_OFF
             }
+            // 開始用コードに1000を加え、終了用のアラームとして区別する。
             offIntent.putExtra("requestCode", slotKey.hashCode() + 1000)
             offIntent.putExtra("scheduledTime", endCal.timeInMillis)
             val offPending = PendingIntent.getBroadcast(

@@ -2,43 +2,30 @@ package com.example.super_kemo_taro3
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
+/** メニュー画面。Compose側のボタン操作を、それぞれのActivityへの画面遷移に結び付ける。 */
 class MainActivity3 : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main3)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
-        findViewById<Button>(R.id.btn_to_main).setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
-        }
-
-        findViewById<Button>(R.id.btn_to_timetable).setOnClickListener {
-            startActivity(Intent(this, TimetableActivity::class.java))
-        }
-
-        findViewById<Button>(R.id.btn_to_main2).setOnClickListener {
-            startActivity(Intent(this, MainActivity2::class.java))
-        }
-
-        findViewById<Button>(R.id.btn_credit).setOnClickListener {
-            showCreditDialog()
+        setContent {
+            AppScreen {
+                MenuScreen(
+                    creditMessage = creditMessage,
+                    onMain = { startActivity(Intent(this, MainActivity::class.java)) },
+                    onTimetable = { startActivity(Intent(this, TimetableActivity::class.java)) },
+                    onTimeSettings = { startActivity(Intent(this, MainActivity2::class.java)) },
+                    onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) }
+                )
+            }
         }
     }
 
-    private fun showCreditDialog() {
-        val message = """
+    // メニューのクレジットダイアログに表示するアプリ情報。
+    private val creditMessage = """
             ■ アプリ名
             言十ベル
             
@@ -65,13 +52,6 @@ class MainActivity3 : AppCompatActivity() {
             BroadcastReceiver（アラーム受信・再起動対応）
             
             ■ 対応OS
-            Android 8.0 以上
+            Android 7.0 以上
         """.trimIndent()
-
-        AlertDialog.Builder(this)
-            .setTitle("クレジット")
-            .setMessage(message)
-            .setPositiveButton("閉じる", null)
-            .show()
-    }
 }
