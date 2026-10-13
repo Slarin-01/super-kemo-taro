@@ -1,19 +1,28 @@
-# values/colors.xml 仕様書
+# colors.xml：通常表示の色
 
-対象: [src/main/res/values/colors.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/colors.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [colors.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/colors.xml)
 
-## 定義
+## 役割
 
-| 色名 | 値 |
+黒、白、ボタン枠の色を名前付きで定義します。
+
+## 変更したいとき
+
+ここに定義した色を変えるときに編集します。Compose画面の配色は共通画面部品の設定も確認します。
+
+## 主な機能
+
+| 部分 | 担当すること |
 | --- | --- |
-| black | #FF000000 |
-| white | #FFFFFFFF |
-| button_stroke | #FF333333 |
+| black / white | 名前付きの黒と白 |
+| button_stroke | 通常表示用のボタン枠の色 |
 
-## 利用関係
+## 扱う情報と結果
 
-Androidリソースとして色を提供する。現在のCompose画面はMaterialThemeやColor.Green・LightGray・Blackをコードで使用し、この色定義を直接参照していない。旧XMLレイアウトのボタン枠線用のbutton_strokeが残っている。
+色の名前と値を定義します。Compose画面の背景・選択色などは共通画面部品の設定も確認します。
 
-button_strokeはvalues-night/colors.xmlに夜間用の上書き定義がある。このファイルには処理・保存データはない。
+関連する場所: [Compose画面の配色](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/java/com/example/super_kemo_taro3/frontend/screens/SharedScreenComponents.kt)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

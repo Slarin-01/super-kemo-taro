@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 名前を付けた色の定義。Composeの画面全体の配色はSharedScreenComponents.ktで設定する。 -->
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

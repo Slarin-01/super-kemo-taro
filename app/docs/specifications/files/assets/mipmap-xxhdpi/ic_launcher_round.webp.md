@@ -1,17 +1,27 @@
-# res/mipmap-xxhdpi/ic_launcher_round.webp 仕様書
+# ic_launcher_round.webp：丸型のアイコン（mipmap-xxhdpi）
 
-対象: [src/main/res/mipmap-xxhdpi/ic_launcher_round.webp](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [ic_launcher_round.webp](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp)
 
 ## 役割
 
-xxhdpi密度向けのWebP画像。リソースIDは@mipmap/ic_launcher_round。同じIDの画像が他の密度フォルダーにもあり、Androidが端末構成に合わせて選択する。
+端末に表示するアプリアイコンの画像です。端末の画面の細かさに合うフォルダーの画像を使います。
 
-## 利用関係
+## 変更したいとき
 
-AndroidManifest.xmlのapplication android:roundIconで指定される。anydpi-v26の同名XMLがアダプティブアイコンを提供する。
+アイコンのデザインを変えるときに差し替えます。同じ名前の画像がほかの細かさ用にもあるので、デザインをそろえます。
 
-## 入出力
+## 主な機能
 
-静的な描画素材。Compose画面内の画像表示としては使わず、画面操作・設定保存・通知処理を持たない。
+| 部分 | 担当すること |
+| --- | --- |
+| 丸型の画像 | 端末の画面の細かさに合わせて表示するアイコン素材 |
+
+## 扱う情報と結果
+
+画像ファイルで、処理を実行するコードはありません。同じ名前の画像を、画面の細かさ別のフォルダーに用意しています。
+
+関連する場所: [アプリアイコンの登録](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml) / [背景・前景の組み合わせ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

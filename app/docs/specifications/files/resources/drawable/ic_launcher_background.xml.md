@@ -1,17 +1,27 @@
-# drawable/ic_launcher_background.xml 仕様書
+# ic_launcher_background.xml：アイコンの背景
 
-対象: [src/main/res/drawable/ic_launcher_background.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/drawable/ic_launcher_background.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [ic_launcher_background.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/drawable/ic_launcher_background.xml)
 
-## 定義
+## 役割
 
-108dp × 108dp、viewport 108 × 108のvector drawable。#3DDC84の背景と#33FFFFFFの格子状の線をpathで定義する。
+アプリアイコンの背景を描くファイルです。
 
-## 利用関係
+## 変更したいとき
 
-mipmap-anydpi-v26/ic_launcher.xmlとic_launcher_round.xmlのbackgroundが@drawable/ic_launcher_backgroundとして参照する。アプリのランチャーアイコンの背景レイヤーで、Compose画面の背景ではない。
+アイコンの背景の形や色を変えるときに編集します。
 
-## 入出力
+## 主な機能
 
-拡大縮小可能な描画リソース。実行関数・永続データ・操作コールバックはない。
+| 部分 | 担当すること |
+| --- | --- |
+| 背景の図形・色 | アイコンを描くための形と色を定義する |
+
+## 扱う情報と結果
+
+通常・丸型のアイコンから共通で参照されます。
+
+関連する場所: [アイコンの組み合わせ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

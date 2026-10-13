@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- 暗い表示で画面を起動する場合の基本テーマ。 -->
     <style name="Base.Theme.Superkemotaro3" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
+        <!-- Compose内の配色は共通画面部品で設定し、ここではタイトルバーを非表示にする。 -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
 </resources>

@@ -1,11 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- バックアップ・端末間移行の対象のひな形。現在はManifestから指定していない。 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
+        <!-- 対象を指定する場合の記述例。コメント内なので現在は適用されない。
         <include .../>
         <exclude .../>
         -->

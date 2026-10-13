@@ -1,17 +1,27 @@
-# xml/backup_rules.xml 仕様書
+# backup_rules.xml：バックアップ設定のひな形
 
-対象: [src/main/res/xml/backup_rules.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/xml/backup_rules.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [backup_rules.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/xml/backup_rules.xml)
 
-## 現内容
+## 役割
 
-full-backup-content要素があり、有効なinclude・exclude要素はない。SharedPreferencesのincludeとdevice.xmlのexcludeはコメントアウトされた例。
+バックアップするデータを指定するためのひな形です。現在は有効な個別設定がなく、Manifestからも指定されていません。
 
-## 適用関係
+## 変更したいとき
 
-現在のAndroidManifest.xmlにはandroid:fullBackupContent="@xml/backup_rules"の指定がない。このファイルで独自のバックアップ対象を制御する設定にはなっていない。applicationのallowBackupはtrue。
+このファイルでバックアップを制御する場合に、内容とManifestの指定を見直します。
 
-## 境界条件
+## 主な機能
 
-ファイル内のコメントはテンプレートの説明であり、それだけで適用OSや実際のバックアップ動作を確定しない。設定キーや端末依存データのバックアップ可否を保証するファイルとして扱わない。実行処理はない。
+| 部分 | 担当すること |
+| --- | --- |
+| full-backup-content | バックアップ対象を指定するためのひな形 |
+
+## 扱う情報と結果
+
+現在はManifestからこのファイルを指定していません。コメント内の記述例も実行されないため、個別のバックアップ設定として使用していません。
+
+関連する場所: [現在の登録内容](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

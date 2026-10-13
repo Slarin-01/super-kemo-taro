@@ -1,17 +1,27 @@
-# xml/data_extraction_rules.xml 仕様書
+# data_extraction_rules.xml：データ移行設定のひな形
 
-対象: [src/main/res/xml/data_extraction_rules.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/xml/data_extraction_rules.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [data_extraction_rules.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/xml/data_extraction_rules.xml)
 
-## 現内容
+## 役割
 
-data-extraction-rules内に空のcloud-backup要素を定義する。include・excludeの例とdevice-transfer要素はコメントアウトされ、有効な個別対象の指定はない。
+バックアップや端末間のデータ移行の対象を指定するためのひな形です。現在はManifestから指定されていません。
 
-## 適用関係
+## 変更したいとき
 
-現在のAndroidManifest.xmlにはandroid:dataExtractionRules="@xml/data_extraction_rules"の指定がない。このファイルから独自のクラウドバックアップ・端末移行ルールを適用する設定にはなっていない。
+このファイルで移行対象を制御する場合に、内容とManifestの指定を見直します。
 
-## 入出力
+## 主な機能
 
-Androidリソースとして存在するXML設定。画面・保存処理・アラームを実行しない。このファイルの存在だけでSharedPreferencesのバックアップや復元を保証しない。
+| 部分 | 担当すること |
+| --- | --- |
+| cloud-backup | バックアップ対象を指定するためのひな形 |
+
+## 扱う情報と結果
+
+現在はManifestからこのファイルを指定していません。コメント内の記述例も実行されないため、個別のバックアップ設定として使用していません。
+
+関連する場所: [現在の登録内容](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

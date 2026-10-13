@@ -1,25 +1,28 @@
-# mipmap-anydpi-v26/ic_launcher.xml 仕様書
+# ic_launcher.xml：通常アイコンの組み合わせ
 
-対象: [src/main/res/mipmap-anydpi-v26/ic_launcher.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [ic_launcher.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml)
 
-## 定義
+## 役割
 
-anydpi-v26修飾子のadaptive-icon。背景、前景、monochromeの3参照を持つ。
+背景と前景の画像を組み合わせ、対応する端末向けのアイコンを作ります。
 
-| レイヤー | 参照 |
+## 変更したいとき
+
+組み合わせるアイコン画像を変えるときに編集します。
+
+## 主な機能
+
+| 部分 | 担当すること |
 | --- | --- |
-| background | @drawable/ic_launcher_background |
-| foreground | @mipmap/ic_launcher_foreground |
-| monochrome | @mipmap/ic_launcher_foreground |
+| background / foreground | 背景と手前の画像を組み合わせる |
+| monochrome | 単色表示用にも同じ前景画像を指定する |
 
-## 利用関係
+## 扱う情報と結果
 
-AndroidManifest.xmlのapplication android:iconが@mipmap/ic_launcherを指定する。対応する環境で本XMLが選択され、低いAPI向けには密度別WebPが同名のmipmapとして存在する。
+Androidが対応する端末でこの組み合わせを読み、アイコンを表示します。
 
-通常用と丸型用のXML内容は現在同じ。前景はdrawableのベクターではなく、密度別のmipmap画像を使用する。
+関連する場所: [背景](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/drawable/ic_launcher_background.xml) / [アイコンの登録](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
 
-## 入出力
-
-OSのアイコン描画に使うリソース。実行処理・保存データはない。
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

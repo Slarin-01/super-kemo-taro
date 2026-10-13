@@ -1,0 +1,75 @@
+/*
+ * バックエンド・設定管理: 設定の読み書きの契約とSharedPreferences実装。保存キーを一元管理。
+ * サービスと状態管理はSettingsRepositoryを利用し、保存先の具体的な扱いをこのファイルに閉じ込める。
+ */
+package com.example.super_kemo_taro3.backend.repository
+
+import android.content.Context
+
+// 1. 呼び出し側が利用する設定保存の契約
+/** 画面の状態管理とサービスが共用する設定の窓口。保存先の名前やキーは実装側で管理する。 */
+interface SettingsRepository {
+    fun readBlockedSlots(): Set<String>
+    fun writeBlockedSlots(slots: Set<String>)
+    fun readPauseUntil(): Long
+    /** 日曜日末の停止期限を保存する。nullを渡すと一時停止を解除する。 */
+    fun writePauseUntil(deadline: Long?)
+    fun readTime(key: String): String?
+    fun writeTimes(times: Map<String, String>)
+    /** 未設定はnullを返し、端末の表示モードを引き継げるようにする。 */
+    fun readDarkMode(): Boolean?
+    fun writeDarkMode(isDark: Boolean)
+    fun isAlarmReceiverMigrated(): Boolean
+    fun markAlarmReceiverMigrated()
+}
+
+// 2. 既存の保存領域・キーを使う実装
+/** SettingsRepositoryをSharedPreferencesで実装する。端末に保存された従来の3領域・キーを引き継ぐ。 */
+class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository {
+    private val appContext = context.applicationContext
+    // 保存領域と既存キーを維持し、更新前の設定をそのまま読み込む。
+    private val timetable = appContext.getSharedPreferences("timetable_settings", Context.MODE_PRIVATE)
+    private val times = appContext.getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
+    private val theme = appContext.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+
+    // 保存領域が持つ集合を直接変更しないよう、読み書きの両方でコピーする。
+    override fun readBlockedSlots(): Set<String> =
+        timetable.getStringSet("blocked_slots", emptySet())?.toSet() ?: emptySet()
+
+    override fun writeBlockedSlots(slots: Set<String>) {
+        timetable.edit().putStringSet("blocked_slots", slots.toSet()).apply()
+    }
+
+    override fun readPauseUntil(): Long = timetable.getLong("pause_until_sunday_time", 0L)
+
+    override fun writePauseUntil(deadline: Long?) {
+        timetable.edit().apply {
+            if (deadline == null) remove("pause_until_sunday_time")
+            else putLong("pause_until_sunday_time", deadline)
+        }.apply()
+    }
+
+    override fun readTime(key: String): String? = times.getString(key, null)
+
+    override fun writeTimes(times: Map<String, String>) {
+        // 全時刻を同じ編集で反映する。直後の再予約は更新済みの値を読み取れる。
+        val editor = this.times.edit()
+        times.forEach { (key, value) -> editor.putString(key, value) }
+        editor.apply()
+    }
+
+    override fun readDarkMode(): Boolean? =
+        if (theme.contains("is_dark_mode")) theme.getBoolean("is_dark_mode", false) else null
+
+    override fun writeDarkMode(isDark: Boolean) {
+        theme.edit().putBoolean("is_dark_mode", isDark).apply()
+    }
+
+    override fun isAlarmReceiverMigrated(): Boolean =
+        timetable.getBoolean("alarm_receiver_migrated_v1", false)
+
+    override fun markAlarmReceiverMigrated() {
+        timetable.edit().putBoolean("alarm_receiver_migrated_v1", true).apply()
+    }
+}
+

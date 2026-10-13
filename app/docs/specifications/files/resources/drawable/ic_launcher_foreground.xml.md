@@ -1,15 +1,27 @@
-# drawable/ic_launcher_foreground.xml 仕様書
+# ic_launcher_foreground.xml：以前のアイコン前景
 
-対象: [src/main/res/drawable/ic_launcher_foreground.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/drawable/ic_launcher_foreground.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [ic_launcher_foreground.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/drawable/ic_launcher_foreground.xml)
 
-## 定義
+## 役割
 
-108dp × 108dp、viewport 108 × 108のvector drawable。白色の前景pathと、半透明黒から透明への線形グラデーションpathを定義する。
+アイコンの手前に描く画像の定義です。現在のアイコン設定ではmipmap内の前景画像を使っています。
 
-## 利用関係
+## 変更したいとき
 
-現アダプティブアイコンはforeground・monochromeとも@**mipmap**/ic_launcher_foregroundを参照しているため、@**drawable**/ic_launcher_foregroundの本ファイルはその参照先ではない。両者は同名でもリソース種別が異なる。
+この画像を使う場合に、形や色を変更します。
 
-現在のKotlin・Manifest・リソースで本drawableへの参照はない。画面・保存・通知の処理には関与しない。
+## 主な機能
+
+| 部分 | 担当すること |
+| --- | --- |
+| 前景の図形・色 | アイコンを描くための形と色を定義する |
+
+## 扱う情報と結果
+
+現在のアイコンの前景にはmipmap内の画像を使用しており、この定義は以前の素材として残っています。
+
+関連する場所: [アイコンの組み合わせ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

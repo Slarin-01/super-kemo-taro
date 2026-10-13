@@ -1,3 +1,4 @@
+<!-- 端末のアプリ一覧などに表示する名前。Manifestのlabelから参照される。 -->
 <resources>
     <string name="app_name">言十ベル</string>
 </resources>

@@ -1,17 +1,27 @@
-# values/strings.xml 仕様書
+# strings.xml：アプリ名
 
-対象: [src/main/res/values/strings.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/strings.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [strings.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/strings.xml)
 
-## 定義
+## 役割
 
-resources内にstring app_nameを1個定義し、値は「言十ベル」。
+端末に表示するアプリ名「言十ベル」を設定します。
 
-## 利用関係
+## 変更したいとき
 
-AndroidManifest.xmlのapplication android:labelが@string/app_nameを参照する。アプリのラベルとして使用される。Composeのボタン・ダイアログなどの文言は各Kotlinファイルに直接記述されており、このファイルには集約されていない。
+アプリ名を変えるときにapp_nameの文字を変更します。
 
-## 保存・動作
+## 主な機能
 
-実行処理と永続データはない。MainActivity3.creditMessage内のアプリ名は別の固定文字列で、自動連動しない。
+| 部分 | 担当すること |
+| --- | --- |
+| app_name | 端末に表示するアプリ名「言十ベル」 |
+
+## 扱う情報と結果
+
+Manifestがこの値を読み、アプリ名として表示します。画面内のボタン文章は各画面ファイルにあります。
+
+関連する場所: [名前の表示設定](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

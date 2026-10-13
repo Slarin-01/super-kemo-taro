@@ -1,22 +1,28 @@
-# values/themes.xml 仕様書
+# themes.xml：画面起動時の基本テーマ
 
-対象: [src/main/res/values/themes.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/themes.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [themes.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values/themes.xml)
 
-## 定義
+## 役割
 
-| スタイル | 親 |
+アプリの画面を開くときの基本的な表示設定です。タイトルバーを表示しないテーマを指定します。
+
+## 変更したいとき
+
+画面起動時の基本テーマを変えるときに編集します。Compose内の配色は共通画面部品で設定します。
+
+## 主な機能
+
+| 部分 | 担当すること |
 | --- | --- |
-| Base.Theme.Superkemotaro3 | Theme.Material3.DayNight.NoActionBar |
-| Theme.Superkemotaro3 | Base.Theme.Superkemotaro3 |
+| Base.Theme.Superkemotaro3 | 明暗に対応し、標準タイトルバーを表示しない基本テーマ |
+| Theme.Superkemotaro3 | Manifestが指定するアプリ用テーマ |
 
-## 利用関係
+## 扱う情報と結果
 
-AndroidManifest.xmlのapplication android:themeでTheme.Superkemotaro3を指定する。全Activityに共通のDayNight・ActionBarなしの基本テーマを与える。基底のMaterialテーマにはbuild.gradle.ktsのlibs.materialが関係する。
+画面起動時の基本表示に使います。画面内のCompose部品の配色は、共通画面部品が担当します。
 
-Compose画面内のMaterialThemeは別途AppUi.ktのKemoThemeが設定する。XMLテーマの存在はXMLで画面レイアウトを構築していることを意味しない。旧SquareTimeButtonスタイルは現ファイルにない。
+関連する場所: [テーマの登録](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml) / [画面内の配色](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/java/com/example/super_kemo_taro3/frontend/screens/SharedScreenComponents.kt)
 
-## 上書き
-
-Base.Theme.Superkemotaro3はvalues-night/themes.xmlにも定義される。本ファイルに有効な個別色itemの設定はなく、例示itemはコメントのみ。保存データや実行関数はない。
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

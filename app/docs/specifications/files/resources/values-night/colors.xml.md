@@ -1,17 +1,27 @@
-# values-night/colors.xml 仕様書
+# colors.xml：暗い表示の色
 
-対象: [src/main/res/values-night/colors.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values-night/colors.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [colors.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/res/values-night/colors.xml)
 
-## 定義
+## 役割
 
-color button_strokeを#FFCCCCCCとして定義する。通常定義#FF333333に対するnight修飾子の上書き。
+暗い表示向けに、ボタン枠の色を定義します。
 
-## 利用関係
+## 変更したいとき
 
-black・whiteはここでは定義せず、通常リソースを使用できる。現在のCompose画面の配色はAppUi.ktのKemoThemeと各UIのColor定義により決まり、button_strokeは直接使用していない。
+暗い表示でこの色を使う部分を変えるときに編集します。Compose画面の配色は共通画面部品の設定も確認します。
 
-## 入出力
+## 主な機能
 
-実行処理・保存データはない。夜間設定に対応するAndroid色リソースを提供する。
+| 部分 | 担当すること |
+| --- | --- |
+| button_stroke | 暗い表示用のボタン枠の色 |
+
+## 扱う情報と結果
+
+色の名前と値を定義します。Compose画面の背景・選択色などは共通画面部品の設定も確認します。
+
+関連する場所: [Compose画面の配色](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/java/com/example/super_kemo_taro3/frontend/screens/SharedScreenComponents.kt)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

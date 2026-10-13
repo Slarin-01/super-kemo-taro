@@ -1,49 +1,30 @@
-# AndroidManifest.xml 仕様書
+# AndroidManifest.xml：画面・権限・受信処理の登録
 
-対象: [src/main/AndroidManifest.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [AndroidManifest.xml](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
 
 ## 役割
 
-Androidへアプリの権限、起動入口、画面、ブロードキャスト受信クラス、テーマ・アイコンを宣言する。
+アプリ起動の準備、5画面、2つの受信処理を登録します。通知変更、時刻予約、再起動後の復元に必要な権限も宣言します。
 
-## 権限
+## 変更したいとき
 
-| 権限 | コードでの用途 |
+画面や受信処理を追加したり、必要な権限を変えたりするときに編集します。
+
+## 主な機能
+
+| 部分 | 担当すること |
 | --- | --- |
-| ACCESS_NOTIFICATION_POLICY | NotificationManagerによる通知フィルター変更 |
-| SCHEDULE_EXACT_ALARM | 正確なアラームの利用 |
-| USE_EXACT_ALARM | 正確なアラーム用の宣言。BootReceiverで許可状況も確認 |
-| RECEIVE_BOOT_COMPLETED | 端末再起動後のアラーム復元 |
+| uses-permission | 通知変更、時刻予約、再起動の受信に使う権限を宣言する |
+| application | 起動準備、アプリ名、アイコン、基本テーマを登録する |
+| activity / activity-alias | 5画面とホーム画面を開く起動名を登録する |
+| receiver | 予約時刻・再起動・アプリ更新を受け取る2つの入口を登録する |
 
-権限を宣言するだけでコード側の許可確認を省略しているわけではない。MainActivity等が通知ポリシーアクセスや正確なアラームの利用可否を確認する。
+## 扱う情報と結果
 
-## application属性
+Androidがこの設定を読み、起動する画面や届ける知らせを決めます。端末側の許可を確認する処理はKotlinコードが担当します。
 
-| 属性 | 値 |
-| --- | --- |
-| name | .SuperKemoTaroApp |
-| allowBackup | true |
-| icon / roundIcon | @mipmap/ic_launcher / @mipmap/ic_launcher_round |
-| label | @string/app_name |
-| supportsRtl | true |
-| theme | @style/Theme.Superkemotaro3 |
+関連する場所: [起動の準備](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/java/com/example/super_kemo_taro3/app/ApplicationSetup.kt) / [知らせの受信](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/java/com/example/super_kemo_taro3/backend/receiver/AlarmReceivers.kt)
 
-## コンポーネント
-
-| クラス | exported | 起動・受信条件 |
-| --- | --- | --- |
-| MainActivity | true | MAIN / LAUNCHER。ホーム画面 |
-| MainActivity2 | false | 時限カスタム。windowSoftInputModeはadjustResize |
-| MainActivity3 | false | メニュー |
-| TimetableActivity | false | 曜日・時限の選択 |
-| NotificationTestActivity | false | 通知フィルター手動テスト |
-| DndReceiver | false | com.example.super_kemo_taro3.DND_ON / DND_OFF |
-| BootReceiver | true | android.intent.action.BOOT_COMPLETED |
-
-## 他ファイルとの関係
-
-全画面はActivity内のsetContentでCompose UIを構築する。このManifestにレイアウトXMLの指定はない。typealiasのnotificationtestではなく、実クラスNotificationTestActivityを登録する。
-
-res/xml/backup_rules.xmlとdata_extraction_rules.xmlは存在するが、applicationにfullBackupContent・dataExtractionRulesの参照属性がない。この2ファイルの独自ルールをManifestから適用する設定にはなっていない。
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

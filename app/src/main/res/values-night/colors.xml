@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 暗い表示では、同じ名前の通常色よりこちらの定義を使う。 -->
 <resources>
     <color name="button_stroke">#FFCCCCCC</color>
 </resources>

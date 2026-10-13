@@ -1,17 +1,27 @@
-# ic_launcher-playstore.png 仕様書
+# ic_launcher-playstore.png：配布用のアイコン画像
 
-対象: [src/main/ic_launcher-playstore.png](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/ic_launcher-playstore.png)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [ic_launcher-playstore.png](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/ic_launcher-playstore.png)
 
 ## 役割
 
-Play Store用のアイコンとして命名されたPNG画像。src/main直下に置かれており、AndroidManifest.xmlのicon・roundIconやCompose画面からは参照されていない。
+アプリを配布するときに使うアイコン画像です。
 
-## 利用関係
+## 変更したいとき
 
-本ファイルだけではストアへの掲載・公開を行わない。配布用素材としての実際の利用はこのアプリコードの外で行う。寸法や図柄の適否は本仕様書の対象外。
+配布用のアイコンを変えるときに差し替えます。端末に表示するアイコンはres内の画像で設定します。
 
-## 入出力
+## 主な機能
 
-静的画像。画面操作、設定保存、通知やアラームの処理はない。
+| 部分 | 担当すること |
+| --- | --- |
+| 配布用アイコン | アプリを配布するときの表示用画像 |
+
+## 扱う情報と結果
+
+画像素材として使用します。端末のアプリ一覧のアイコンは、res内の画像とManifestの指定で構成します。
+
+関連する場所: [端末側のアイコン指定](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/src/main/AndroidManifest.xml)
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 

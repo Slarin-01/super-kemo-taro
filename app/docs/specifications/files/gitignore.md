@@ -1,17 +1,25 @@
-# .gitignore 仕様書
+# .gitignore：変更管理から外すファイル
 
-対象: [.gitignore](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/.gitignore)  
-確認日: 2026-10-11
+更新日: 2026-10-13  
+対象: [.gitignore](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/.gitignore)
 
-## 定義
+## 役割
 
-有効なパターンは `/build` の1行。app直下のbuildディレクトリをGitの追跡対象から除外する。
+自動生成されるbuildフォルダーを変更管理から外します。
 
-## 利用関係
+## 変更したいとき
 
-ビルド結果・中間生成物はソースとして管理しない。releaseディレクトリ、docs、srcはこのファイルのパターンでは除外しない。ただし親プロジェクトの除外設定が別途影響する可能性がある。
+除外するファイルを追加するときに編集します。
 
-## 入出力
+## 主な機能
 
-Gitの追跡対象を制御する設定で、Android実行時の処理・保存データ・Compose画面には影響しない。
+| 部分 | 担当すること |
+| --- | --- |
+| /build | 自動生成されたビルド結果を変更管理から外す |
+
+## 扱う情報と結果
+
+アプリの実行動作には関係せず、開発中に管理するファイルの範囲を指定します。
+
+[仕様書の一覧へ](C:/Users/REOTO/AndroidStudioProjects/superkemotaro3/app/docs/specifications/README.md)
 
