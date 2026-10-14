@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.util.Calendar
 
-/** FRI→日曜日、過去時刻の翌週化、日曜日当日・月曜日からの停止期限、不正キー、旧アラーム識別子の互換性を6件で検証する。 */
+/** FRI→金曜日、過去時刻の翌週化、日曜日当日・月曜日からの停止期限、不正キー、旧アラーム識別子の互換性を6件で検証する。 */
 class ScheduleCalculatorTest {
     // 実行日とは無関係に、固定した2026年10月の日付で曜日と境界を確認する。
     private fun date(day: Int, hour: Int, minute: Int = 0): Long = Calendar.getInstance().apply {
@@ -13,17 +13,17 @@ class ScheduleCalculatorTest {
         set(2026, Calendar.OCTOBER, day, hour, minute)
     }.timeInMillis
 
-    @Test fun fridayKeyRunsOnSunday() {
+    @Test fun fridayKeyRunsOnFriday() {
         val slot = requireNotNull(TimetableRules.parseSlot("FRI_1"))
-        assertEquals(Calendar.SUNDAY, slot.calendarDay)
-        val scheduled = ScheduleCalculator.nextOccurrence(slot.calendarDay, LessonTime(8, 40), date(10, 12))
-        assertEquals(date(11, 8, 40), scheduled)
+        assertEquals(Calendar.FRIDAY, slot.calendarDay)
+        val scheduled = ScheduleCalculator.nextOccurrence(slot.calendarDay, LessonTime(8, 40), date(15, 12))
+        assertEquals(date(16, 8, 40), scheduled)
     }
 
-    @Test fun elapsedSundayTimeMovesToNextWeek() {
+    @Test fun elapsedFridayTimeMovesToNextWeek() {
         // 同じ曜日でも開始を過ぎていれば翌週へ送る。
-        val scheduled = ScheduleCalculator.nextOccurrence(Calendar.SUNDAY, LessonTime(8, 40), date(11, 9))
-        assertEquals(date(18, 8, 40), scheduled)
+        val scheduled = ScheduleCalculator.nextOccurrence(Calendar.FRIDAY, LessonTime(8, 40), date(16, 9))
+        assertEquals(date(23, 8, 40), scheduled)
     }
 
     @Test fun pauseOnSundayEndsTheSameDay() {

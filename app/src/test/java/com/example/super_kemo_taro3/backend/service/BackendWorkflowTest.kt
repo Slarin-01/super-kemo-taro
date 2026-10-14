@@ -19,11 +19,11 @@ class BackendWorkflowTest {
     private val delivery = AlarmDeliveryService(notifications, pause, alarms)
 
     // 選択・解除と、時刻保存前後の予約内容を確認する。
-    @Test fun selectionPersistsAndRegistersSundayAlarm() {
+    @Test fun selectionPersistsAndRegistersFridayAlarm() {
         assertFalse(timetable.toggleSlot("FRI_5"))
         assertEquals(setOf("FRI_5"), settings.selected)
         val registered = alarms.registrations.single()
-        assertEquals(Calendar.SUNDAY, registered.slot.calendarDay)
+        assertEquals(Calendar.FRIDAY, registered.slot.calendarDay)
         assertEquals(LessonTime(13, 25), registered.start)
         assertEquals(LessonTime(14, 15), registered.end)
     }
@@ -42,11 +42,11 @@ class BackendWorkflowTest {
         assertTrue(alarms.registrations.isEmpty())
     }
 
-    @Test fun savedEditorTimesRescheduleTheSameSundaySlot() {
+    @Test fun savedEditorTimesRescheduleTheSameFridaySlot() {
         settings.selected = setOf("FRI_5")
         assertEquals(SaveTimesResult.SAVED, lessonTimes.save(lessonTimes.defaultTimes()))
         val registered = alarms.registrations.single()
-        assertEquals(Calendar.SUNDAY, registered.slot.calendarDay)
+        assertEquals(Calendar.FRIDAY, registered.slot.calendarDay)
         assertEquals(LessonTime(13, 15), registered.start)
         assertEquals("13:15", settings.times["time_start_5"])
         assertEquals(16, settings.times.size)
@@ -74,6 +74,7 @@ class BackendWorkflowTest {
         assertFalse(timetable.migrateReceiverIfNeeded())
         assertEquals(listOf("FRI_1"), alarms.legacyCancellations)
         assertEquals(1, alarms.registrations.size)
+        assertEquals(Calendar.FRIDAY, alarms.registrations.single().slot.calendarDay)
         assertTrue(settings.migrated)
     }
 
@@ -87,10 +88,10 @@ class BackendWorkflowTest {
         assertEquals(1, alarms.registrations.size)
     }
 
-    @Test fun bootRestoreUsesTheSameSundayMapping() {
+    @Test fun bootRestoreUsesTheSameFridayMapping() {
         settings.selected = setOf("FRI_8", "invalid")
         assertTrue(timetable.restoreAfterBoot())
-        assertEquals(Calendar.SUNDAY, alarms.registrations.single().slot.calendarDay)
+        assertEquals(Calendar.FRIDAY, alarms.registrations.single().slot.calendarDay)
         assertEquals(LessonTime(16, 30), alarms.registrations.single().start)
     }
 

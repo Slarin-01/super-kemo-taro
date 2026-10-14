@@ -18,8 +18,8 @@ object TimetableRules {
         "TUE" to Calendar.TUESDAY,
         "WED" to Calendar.WEDNESDAY,
         "THU" to Calendar.THURSDAY,
-        // テスト用: 表示・保存キーは金曜日のまま、すべての登録経路で日曜日に動かす。
-        "FRI" to Calendar.SUNDAY
+        // 表示・保存キーと同じ金曜日に動かす。すべての登録経路でこの対応を使う。
+        "FRI" to Calendar.FRIDAY
     )
 
     fun parseSlot(key: String): TimetableSlot? {
