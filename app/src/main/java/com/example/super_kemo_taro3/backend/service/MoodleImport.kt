@@ -275,7 +275,7 @@ object MoodleImport {
             REST,
             mapOf("wstoken" to token, "wsfunction" to function, "moodlewsrestformat" to "json") + extra
         )
-        moodleFailure(body)?.let { throw ImportFailed(it) }
+        moodleFailure(body)?.let { throw ImportFailed(it, unauthorized = true) }
         return body
     }
 
@@ -311,7 +311,7 @@ data class SyllabusCourse(
     val term: String?
 )
 data class ImportResult(val slots: Set<String>, val unmatched: Int)
-class ImportFailed(message: String) : Exception(message)
+class ImportFailed(message: String, val unauthorized: Boolean = false) : Exception(message)
 
 fun interface PageFetch {
     fun load(url: String, form: Map<String, String>?): String

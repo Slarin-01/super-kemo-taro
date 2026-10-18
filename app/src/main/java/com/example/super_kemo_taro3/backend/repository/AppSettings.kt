@@ -7,10 +7,16 @@ package com.example.super_kemo_taro3.backend.repository
 import android.content.Context
 
 // 1. 呼び出し側が利用する設定保存の契約
+data class MoodleLogin(val siteId: String, val expiresAt: Long)
+
 /** 画面の状態管理とサービスが共用する設定の窓口。保存先の名前やキーは実装側で管理する。 */
 interface SettingsRepository {
     fun readBlockedSlots(): Set<String>
     fun writeBlockedSlots(slots: Set<String>)
+    fun readMoodleToken(): String?
+    fun writeMoodleToken(token: String?)
+    fun readMoodleLogin(): MoodleLogin?
+    fun writeMoodleLogin(login: MoodleLogin?)
     fun readPauseUntil(): Long
     /** 日曜日末の停止期限を保存する。nullを渡すと一時停止を解除する。 */
     fun writePauseUntil(deadline: Long?)
@@ -38,6 +44,32 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
 
     override fun writeBlockedSlots(slots: Set<String>) {
         timetable.edit().putStringSet("blocked_slots", slots.toSet()).apply()
+    }
+
+    override fun readMoodleToken(): String? = timetable.getString("moodle_token", null)
+
+    override fun writeMoodleToken(token: String?) {
+        // ブラウザから戻った別プロセスが読むため、戻りを待ってから保存する。
+        timetable.edit().apply {
+            if (token == null) remove("moodle_token") else putString("moodle_token", token)
+        }.commit()
+    }
+
+    override fun readMoodleLogin(): MoodleLogin? {
+        val siteId = timetable.getString("moodle_login_site", null) ?: return null
+        return MoodleLogin(siteId, timetable.getLong("moodle_login_expires", 0L))
+    }
+
+    override fun writeMoodleLogin(login: MoodleLogin?) {
+        timetable.edit().apply {
+            if (login == null) {
+                remove("moodle_login_site")
+                remove("moodle_login_expires")
+            } else {
+                putString("moodle_login_site", login.siteId)
+                putLong("moodle_login_expires", login.expiresAt)
+            }
+        }.commit()
     }
 
     override fun readPauseUntil(): Long = timetable.getLong("pause_until_sunday_time", 0L)

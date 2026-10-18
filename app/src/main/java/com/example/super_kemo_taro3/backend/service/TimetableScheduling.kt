@@ -88,6 +88,17 @@ class TimetableService(
         return needsPermission
     }
 
+    /** 選択枠を置き換える。外した枠の予約は消し、権限があれば新しい枠を予約する。trueは予約の許可不足。 */
+    fun replaceSelectedSlots(keys: Set<String>): Boolean {
+        val next = keys.filter { TimetableRules.parseSlot(it) != null }.toSet()
+        val previous = settings.readBlockedSlots()
+        (previous - next).forEach { alarms.cancelSlot(it) }
+        val needsPermission = !alarms.canScheduleExactAlarms()
+        if (!needsPermission) next.forEach { registerSlot(it, useDefaults = true) }
+        settings.writeBlockedSlots(next)
+        return needsPermission
+    }
+
     // 時刻保存後は保存値だけで再登録する。falseは予約権限不足であり、時刻保存の失敗ではない。
     fun rescheduleSelectedSlots(): Boolean {
         if (!alarms.canScheduleExactAlarms()) return false
