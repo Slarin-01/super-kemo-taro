@@ -51,7 +51,7 @@
             </intent-filter>
         </receiver>
         <activity android:name=".frontend.screens.MenuActivity" android:exported="false" />
-        <!-- Moodleのモバイル起動が kemotaro://token=... で戻す。ログイン開始時の照合に通ったトークンだけを保存する。 -->
+        <!-- Moodleのモバイル起動が koto-bell://token=... で戻す。ログイン開始時の照合に通ったトークンだけを保存する。 -->
         <activity
             android:name=".frontend.screens.MoodleImportActivity"
             android:exported="true">
@@ -59,7 +59,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kemotaro" />
+                <data android:scheme="koto-bell" />
             </intent-filter>
         </activity>
         <activity android:name=".frontend.screens.TimetableEditorActivity" android:exported="false" />

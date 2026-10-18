@@ -11,10 +11,10 @@ import java.util.Calendar
 import java.util.TimeZone
 
 // 1. 接続先と、アプリへ戻ったトークン
-/** 岡大Moodleのモバイル起動と、kemotaroスキームで戻るトークンを扱う。 */
+/** 岡大Moodleのモバイル起動と、koto-bellスキームで戻るトークンを扱う。 */
 object MoodleImport {
     const val ORIGIN = "https://moodle.el.okayama-u.ac.jp"
-    const val SCHEME = "kemotaro"
+    const val SCHEME = "koto-bell"
     const val CALENDAR_URL = "https://www.okayama-u.ac.jp/tp/student/kyomu1_2_1.html"
     const val SEARCH_URL = "https://kyomu.adm.okayama-u.ac.jp/Portal/Public/Syllabus/SearchMain.aspx"
     private const val REST = "$ORIGIN/webservice/rest/server.php"
@@ -38,7 +38,7 @@ object MoodleImport {
 
     fun returnedToken(url: String): ReturnedToken? {
         if (url.length > 8192) return null
-        val matched = Regex("^kemotaro://token=([^&#]+)$").matchEntire(url) ?: return null
+        val matched = Regex("^${Regex.escape(SCHEME)}://token=([^&#]+)$").matchEntire(url) ?: return null
         val decoded = try {
             val encoded = matched.groupValues[1].replace("+", "%2B")
             String(decodeBase64(URLDecoder.decode(encoded, "UTF-8")), Charsets.UTF_8)

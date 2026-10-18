@@ -28,11 +28,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.example.super_kemo_taro3.app.appServices
+import com.example.super_kemo_taro3.backend.service.MoodleImport
 import com.example.super_kemo_taro3.frontend.viewmodel.MoodleImportViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
 
 // 1. 取り込み画面の起動と、Moodleから戻るURLの受け取り
-/** メニューから開くと確認を出し、kemotaroスキームで戻るとトークンを渡して取り込みを続ける。 */
+/** メニューから開くと確認を出し、koto-bellスキームで戻るとトークンを渡して取り込みを続ける。 */
 class MoodleImportActivity : AppCompatActivity() {
     private val model by lazy {
         ViewModelProvider(this, ScreenViewModelFactory {
@@ -65,7 +66,7 @@ class MoodleImportActivity : AppCompatActivity() {
 
     private fun consume(intent: Intent) {
         val url = intent.dataString ?: return
-        if (url.startsWith("kemotaro:")) model.acceptToken(url)
+        if (url.startsWith("${MoodleImport.SCHEME}:")) model.acceptToken(url)
     }
 
     private fun start() {

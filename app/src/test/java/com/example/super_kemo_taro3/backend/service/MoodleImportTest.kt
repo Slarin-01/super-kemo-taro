@@ -14,7 +14,7 @@ class MoodleImportTest {
         val site = "a".repeat(32)
         val token = "b".repeat(32)
         val encoded = java.util.Base64.getEncoder().encodeToString("$site:::$token".toByteArray())
-        val returned = MoodleImport.returnedToken("kemotaro://token=$encoded")
+        val returned = MoodleImport.returnedToken("${MoodleImport.SCHEME}://token=$encoded")
         assertEquals(site, returned?.siteId)
         assertEquals(token, returned?.token)
         assertEquals(MoodleImport.passportSiteId("abc").length, 32)
