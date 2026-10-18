@@ -50,6 +50,11 @@ class MoodleImportTest {
         assertEquals(listOf("2026010001", "2026010002", "2026010003", "2026010004", "2026010005"), pages.codes)
     }
 
+    @Test fun rejectsUnlistedHostsBeforeConnecting() {
+        val error = runCatching { HttpPages().load("https://example.test/", null) }.exceptionOrNull()
+        assertEquals("大学の公開URLが不正です", error?.message)
+    }
+
     @Test fun emptyEnrolmentDoesNotReadTheCalendar() {
         val pages = FixturePages(courses = """[{"idnumber":"","fullname":"案内","enddate":0}]""")
         val error = runCatching { MoodleImport.collect("token", today, nowEpoch, pages) }.exceptionOrNull()
@@ -120,4 +125,4 @@ private fun syllabus(code: String): String {
 }
 
 private fun cells(code: String, term: String, slot: String) =
-    "<td>1</td><td>2026</td><td><a href=\"Syllabus.aspx?lct_cd=$code\">講義</a></td><td></td><td>科目</td><td>教員</td><td>$term</td><td>$slot</td>"
+    "<td>1</td><td>2026</td><td><a href=DetailMain.aspx?lct_year=2026&lct_cd=$code&je_cd=1 target=_blank>講義</a></td><td></td><td>科目</td><td>教員</td><td>$term</td><td>$slot</td>"

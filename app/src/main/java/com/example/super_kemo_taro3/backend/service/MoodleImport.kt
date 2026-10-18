@@ -317,6 +317,82 @@ fun interface PageFetch {
     fun load(url: String, form: Map<String, String>?): String
 }
 
+/** 岡大の公開ページとMoodle RESTへ、ホストごとのCookieを保ってHTTPSでアクセスする。 */
+class HttpPages : PageFetch {
+    private val cookies = mutableMapOf<String, MutableMap<String, String>>()
+
+    override fun load(url: String, form: Map<String, String>?): String = exchange(url, form, 0)
+
+    private fun exchange(url: String, form: Map<String, String>?, redirects: Int): String {
+        if (redirects > 5) throw ImportFailed("大学の公開情報を取得できません")
+        val parsed = java.net.URL(url)
+        if (parsed.protocol != "https" || parsed.host !in hosts || parsed.port !in listOf(-1, 443) || parsed.userInfo != null) {
+            throw ImportFailed("大学の公開URLが不正です")
+        }
+        val connection = parsed.openConnection() as java.net.HttpURLConnection
+        connection.instanceFollowRedirects = false
+        connection.connectTimeout = 15_000
+        connection.readTimeout = 15_000
+        connection.setRequestProperty("User-Agent", "KemoTaro/1.0")
+        val jar = cookies[parsed.host]
+        if (!jar.isNullOrEmpty()) {
+            connection.setRequestProperty("Cookie", jar.entries.joinToString("; ") { "${it.key}=${it.value}" })
+        }
+        if (form != null) {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+            val body = form.entries.joinToString("&") { entry ->
+                java.net.URLEncoder.encode(entry.key, "UTF-8") + "=" + java.net.URLEncoder.encode(entry.value, "UTF-8")
+            }
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+        }
+        val code = connection.responseCode
+        remember(parsed.host, connection.headerFields["Set-Cookie"])
+        if (code in 300..399) {
+            val location = connection.getHeaderField("Location") ?: throw ImportFailed("大学の公開情報を取得できません")
+            connection.disconnect()
+            return exchange(java.net.URL(parsed, location).toString(), null, redirects + 1)
+        }
+        val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            ?: throw ImportFailed("大学の公開情報を取得できません")
+        val text = String(readLimited(stream), Charsets.UTF_8)
+        if (code !in 200..299) throw ImportFailed("大学の公開情報を取得できません")
+        return text
+    }
+
+    private fun remember(host: String, headers: List<String>?) {
+        val jar = cookies.getOrPut(host) { mutableMapOf() }
+        headers?.forEach { header ->
+            val pair = header.substringBefore(';')
+            val name = pair.substringBefore('=').trim()
+            if (name.isNotEmpty()) jar[name] = pair.substringAfter('=', "").trim()
+        }
+    }
+
+    private fun readLimited(stream: java.io.InputStream): ByteArray {
+        val buffer = java.io.ByteArrayOutputStream()
+        val chunk = ByteArray(8192)
+        stream.use { input ->
+            while (true) {
+                val count = input.read(chunk)
+                if (count < 0) break
+                if (buffer.size() + count > 4 * 1024 * 1024) throw ImportFailed("大学の公開ページが大きすぎます")
+                buffer.write(chunk, 0, count)
+            }
+        }
+        return buffer.toByteArray()
+    }
+
+    private companion object {
+        val hosts = setOf(
+            "moodle.el.okayama-u.ac.jp",
+            "kyomu.adm.okayama-u.ac.jp",
+            "www.okayama-u.ac.jp"
+        )
+    }
+}
+
 private sealed class Markup {
     data class Tag(val close: Boolean, val name: String, val attrs: Map<String, String>) : Markup()
     data class Text(val value: String) : Markup()
@@ -334,7 +410,8 @@ private fun tokens(html: String): List<Markup> {
         val parsed = Regex("^<\\s*(/?)([A-Za-z0-9]+)\\b([^>]*)>?$", RegexOption.DOT_MATCHES_ALL).matchEntire(token)
             ?: continue
         val attrs = linkedMapOf<String, String>()
-        Regex("([^\\s=]+)\\s*=\\s*(\"([^\"]*)\"|'([^']*)'|([^\\s\"'=<>`]+))").findAll(parsed.groupValues[3])
+        // 公開シラバスのリンクは href=DetailMain.aspx?lct_cd=... のように引用されない。
+        Regex("([^\\s=]+)\\s*=\\s*(\"([^\"]*)\"|'([^']*)'|([^\\s\"'<>`]+))").findAll(parsed.groupValues[3])
             .forEach { attr ->
                 val value = attr.groups[3]?.value ?: attr.groups[4]?.value ?: attr.groups[5]?.value ?: ""
                 attrs[attr.groupValues[1].lowercase()] = unescapeHtml(value)
