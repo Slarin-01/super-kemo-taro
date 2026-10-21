@@ -50,6 +50,13 @@ class MoodleImportTest {
         assertEquals(listOf("2026010001", "2026010002", "2026010003", "2026010004", "2026010005"), pages.codes)
     }
 
+    @Test fun letterLectureCodeImportsTheMondaySlot() {
+        val pages = FixturePages(courses = """[{"idnumber":"202602B409","fullname":"月曜の実験","enddate":0}]""")
+        val result = MoodleImport.collect("token", today, nowEpoch, pages)
+        assertEquals(setOf("MON_1", "MON_2", "MON_3", "MON_4"), result.slots)
+        assertEquals(0, result.unmatched)
+    }
+
     @Test fun everyListedSlotIsImportedIncludingMonday() {
         val course = MoodleImport.parseSyllabus(
             """<table id="ctl00_phContents_ucGrid_grv"><tr>${cells("2026027631", "第３学期", "月5〜8,木5〜8")}</tr></table>"""
@@ -130,6 +137,7 @@ private const val calendar = """
 private fun syllabus(code: String): String {
     val row = when (code) {
         "2026010001" -> cells(code, "第３学期", "木5〜6 月1")
+        "202602B409" -> cells(code, "3・4学期", "月1〜4")
         "2026010002" -> cells(code, "前期", "月1")
         "2026010003" -> cells(code, "第3学期", "土1")
         "2026010004" -> cells(code, "通年", "火1")

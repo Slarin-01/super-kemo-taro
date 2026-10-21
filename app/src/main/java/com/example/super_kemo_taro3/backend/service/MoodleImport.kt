@@ -25,6 +25,7 @@ object MoodleImport {
     private val weekdays = "月火水木金土日"
     private val dayKeys = listOf("MON", "TUE", "WED", "THU", "FRI")
     private val slotPattern = Regex("(?<!\\d)([月火水木金土日])曜?(\\d+)(?:[〜～~\\-](\\d+))?")
+    private val lectureCode = "[0-9A-Za-z]{10}"
 
     fun launchUrl(passport: String): String {
         val query = "service=moodle_mobile_app&passport=$passport&urlscheme=$SCHEME&confirmed=1"
@@ -62,18 +63,20 @@ object MoodleImport {
     }
 
     // 2. 履修科目の講義番号
-    /** 終了済みを除き、idnumberまたは科目名先頭の10桁を講義番号にする。 */
+    /** 終了済みを除き、idnumberまたは科目名の英数字10桁を講義番号にする。 */
     fun lectureCodes(json: String, nowEpoch: Long): List<String> {
         val codes = mutableListOf<String>()
+        val codePattern = Regex(lectureCode)
+        val bracketed = Regex("\\[($lectureCode)]")
         for (course in jsonObjects(json)) {
             val fields = topFields(course)
             val end = fields["enddate"]?.toLongOrNull()
             if (end != null && end != 0L && end <= nowEpoch) continue
             val idnumber = fields["idnumber"]
-            val code = if (idnumber != null && Regex("\\d{10}").matches(idnumber)) {
+            val code = if (idnumber != null && codePattern.matches(idnumber)) {
                 idnumber
             } else {
-                Regex("\\[(\\d{10})]").find(fields["fullname"] ?: "")?.groupValues?.get(1)
+                bracketed.find(fields["fullname"] ?: "")?.groupValues?.get(1)
             }
             if (code != null) codes += code
         }
@@ -168,7 +171,7 @@ object MoodleImport {
     }
 
     fun lookupLecture(code: String, pages: PageFetch): SyllabusCourse? {
-        if (!Regex("[0-9]{10}").matches(code)) throw ImportFailed("講義番号が不正です")
+        if (!Regex(lectureCode).matches(code)) throw ImportFailed("講義番号が不正です")
         val form = parseForm(pages.load(SEARCH_URL, null)).toMutableMap()
         form[yearField] = code.take(4)
         form[codeField] = code
@@ -294,7 +297,7 @@ object MoodleImport {
 
     private fun courseFrom(row: List<Pair<String, String?>>): SyllabusCourse? {
         val href = row.getOrNull(2)?.second ?: return null
-        val code = Regex("(?:^|[?&])lct_cd=([0-9]{10})(?:&|$)").find(href)?.groupValues?.get(1) ?: return null
+        val code = Regex("(?:^|[?&])lct_cd=($lectureCode)(?:&|$)").find(href)?.groupValues?.get(1) ?: return null
         val term = row.getOrNull(6)?.first?.let { plain(it) }?.ifBlank { null }
         return SyllabusCourse(code = code, term = term, slotText = plain(row.getOrNull(7)?.first ?: ""))
     }
