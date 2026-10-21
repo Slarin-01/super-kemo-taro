@@ -24,6 +24,7 @@ object MoodleImport {
     private val searchButton = "ctl00${"$"}phContents${"$"}ctl18${"$"}btnSearch"
     private val weekdays = "月火水木金土日"
     private val dayKeys = listOf("MON", "TUE", "WED", "THU", "FRI")
+    private val slotPattern = Regex("(?<!\\d)([月火水木金土日])曜?(\\d+)(?:[〜～~\\-](\\d+))?")
 
     fun launchUrl(passport: String): String {
         val query = "service=moodle_mobile_app&passport=$passport&urlscheme=$SCHEME&confirmed=1"
@@ -243,29 +244,41 @@ object MoodleImport {
         return spans.any { it.start <= today && today <= it.end }
     }
 
-    /** 月〜金・1〜8限に入る枠だけを保存キーにする。 */
+    /** 月〜金・1〜8限に入る枠だけを保存キーにする。1セル内の複数曜限はすべて使う。 */
     fun muteKeys(course: SyllabusCourse): Set<String> {
-        val weekday = course.weekday ?: return emptySet()
-        val period = course.period ?: return emptySet()
-        val end = course.periodEnd ?: period
-        // ponytail: 土日と9限以降は40枠の外なので捨てる。枠を増やすならここを広げる
-        if (weekday !in dayKeys.indices || end < period) return emptySet()
-        return (period..end).filter { it in 1..8 }.map { "${dayKeys[weekday]}_$it" }.toSet()
+        val keys = mutableSetOf<String>()
+        // 10月1日のような日付は曜限ではない。土日と9限以降は40枠の外。
+        for (match in slotPattern.findAll(course.slotText)) {
+            val weekday = weekdays.indexOf(match.groupValues[1])
+            val period = match.groupValues[2].toInt()
+            val end = match.groupValues[3].toIntOrNull() ?: period
+            if (weekday !in dayKeys.indices || end < period) continue
+            for (lesson in period..end) if (lesson in 1..8) keys += "${dayKeys[weekday]}_$lesson"
+        }
+        return keys
     }
 
     // 5. 取得済み本文から、今日のミュート枠を集める
-    fun collect(token: String, today: String, nowEpoch: Long, pages: PageFetch): ImportResult {
+    fun collect(
+        token: String,
+        today: String,
+        nowEpoch: Long,
+        pages: PageFetch,
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }
+    ): ImportResult {
         val site = moodle(token, "core_webservice_get_site_info", emptyMap(), pages)
         val courses = moodle(token, "core_enrol_get_users_courses", mapOf("userid" to userId(site)), pages)
         val codes = lectureCodes(courses, nowEpoch)
         if (codes.isEmpty()) throw ImportFailed("履修中の科目を読み取れません")
+        onProgress(0, codes.size)
         val calendars = parseCalendar(pages.load(CALENDAR_URL, null))
         val keys = mutableSetOf<String>()
         var unmatched = 0
-        for (code in codes) {
+        for ((index, code) in codes.withIndex()) {
             val course = lookupLecture(code, pages)
             val slots = if (course != null && courseActive(course, calendars, today)) muteKeys(course) else emptySet()
             if (slots.isEmpty()) unmatched += 1 else keys += slots
+            onProgress(index + 1, codes.size)
         }
         return ImportResult(keys, unmatched)
     }
@@ -279,19 +292,11 @@ object MoodleImport {
         return body
     }
 
-    // ponytail: 週2回はセル内の最初の曜限だけ。複数枠が必要ならセルを分割する
     private fun courseFrom(row: List<Pair<String, String?>>): SyllabusCourse? {
         val href = row.getOrNull(2)?.second ?: return null
         val code = Regex("(?:^|[?&])lct_cd=([0-9]{10})(?:&|$)").find(href)?.groupValues?.get(1) ?: return null
-        val slot = Regex("([月火水木金土日])(\\d+)(?:[〜～~](\\d+))?").find(plain(row.getOrNull(7)?.first ?: ""))
         val term = row.getOrNull(6)?.first?.let { plain(it) }?.ifBlank { null }
-        return SyllabusCourse(
-            code = code,
-            weekday = slot?.let { weekdays.indexOf(it.groupValues[1]) },
-            period = slot?.groupValues?.get(2)?.toInt(),
-            periodEnd = slot?.groupValues?.get(3)?.toIntOrNull(),
-            term = term
-        )
+        return SyllabusCourse(code = code, term = term, slotText = plain(row.getOrNull(7)?.first ?: ""))
     }
 
     private fun plain(value: String): String =
@@ -305,10 +310,8 @@ data class ReturnedToken(val siteId: String, val token: String)
 data class DateSpan(val start: String, val end: String)
 data class SyllabusCourse(
     val code: String,
-    val weekday: Int?,
-    val period: Int?,
-    val periodEnd: Int?,
-    val term: String?
+    val term: String?,
+    val slotText: String
 )
 data class ImportResult(val slots: Set<String>, val unmatched: Int)
 class ImportFailed(message: String, val unauthorized: Boolean = false) : Exception(message)

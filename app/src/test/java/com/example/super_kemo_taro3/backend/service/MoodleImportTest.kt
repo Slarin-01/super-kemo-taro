@@ -44,10 +44,24 @@ class MoodleImportTest {
     @Test fun currentTermSlotsIgnoreOtherTermsWeekendsAndLaterPeriods() {
         val pages = FixturePages()
         val result = MoodleImport.collect("token", today, nowEpoch, pages)
-        assertEquals(setOf("THU_5", "THU_6", "TUE_1", "FRI_8"), result.slots)
+        assertEquals(setOf("THU_5", "THU_6", "MON_1", "TUE_1", "FRI_8"), result.slots)
         assertEquals(2, result.unmatched)
         assertTrue(pages.posts.all { it["__VIEWSTATE"] == "view" && it[searchButton] == "検 索" })
         assertEquals(listOf("2026010001", "2026010002", "2026010003", "2026010004", "2026010005"), pages.codes)
+    }
+
+    @Test fun everyListedSlotIsImportedIncludingMonday() {
+        val course = MoodleImport.parseSyllabus(
+            """<table id="ctl00_phContents_ucGrid_grv"><tr>${cells("2026027631", "第３学期", "月5〜8,木5〜8")}</tr></table>"""
+        ).single()
+        assertEquals(
+            setOf("MON_5", "MON_6", "MON_7", "MON_8", "THU_5", "THU_6", "THU_7", "THU_8"),
+            MoodleImport.muteKeys(course)
+        )
+        val dated = MoodleImport.parseSyllabus(
+            """<table id="ctl00_phContents_ucGrid_grv"><tr>${cells("2026027632", "第３学期", "10月21日")}</tr></table>"""
+        ).single()
+        assertTrue(MoodleImport.muteKeys(dated).isEmpty())
     }
 
     @Test fun rejectsUnlistedHostsBeforeConnecting() {
