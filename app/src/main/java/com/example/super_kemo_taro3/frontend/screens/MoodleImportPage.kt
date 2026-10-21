@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -51,6 +53,7 @@ class MoodleImportActivity : AppCompatActivity() {
                 MoodleImportScreen(
                     phase = model.phase,
                     message = model.message,
+                    progress = model.progress,
                     onStart = ::start,
                     onRetry = model::retry,
                     onClose = ::finish
@@ -90,6 +93,7 @@ class MoodleImportActivity : AppCompatActivity() {
 fun MoodleImportScreen(
     phase: MoodleImportViewModel.Phase,
     message: String,
+    progress: Float?,
     onStart: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit
@@ -99,6 +103,14 @@ fun MoodleImportScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (phase == MoodleImportViewModel.Phase.Importing) {
+            CircularProgressIndicator()
+            if (progress == null) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            } else {
+                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            }
+        }
         Text(message)
         if (phase == MoodleImportViewModel.Phase.Confirm) {
             Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("取り込む") }
@@ -120,6 +132,7 @@ private fun MoodleImportScreenPreview() {
         MoodleImportScreen(
             phase = MoodleImportViewModel.Phase.Confirm,
             message = "岡大Moodleの履修科目で、ミュートする枠を置き換えます。",
+            progress = null,
             onStart = {},
             onRetry = {},
             onClose = {}

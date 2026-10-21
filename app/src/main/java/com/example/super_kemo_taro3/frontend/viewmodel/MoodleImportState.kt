@@ -30,6 +30,8 @@ class MoodleImportViewModel(
         private set
     var message by mutableStateOf(confirmMessage)
         private set
+    var progress by mutableStateOf<Float?>(null)
+        private set
     var onNeedsAlarmPermission: () -> Unit = {}
     private var openAlarmSettings = false
     private var acceptedUrl: String? = null
@@ -71,6 +73,7 @@ class MoodleImportViewModel(
 
     fun retry() {
         acceptedUrl = null
+        progress = null
         phase = Phase.Confirm
         message = confirmMessage
     }
@@ -83,12 +86,24 @@ class MoodleImportViewModel(
 
     private fun runImport(token: String) {
         phase = Phase.Importing
+        progress = null
         message = "履修科目を取り込んでいます。"
         val main = Handler(Looper.getMainLooper())
         Thread {
             val outcome = try {
                 val now = System.currentTimeMillis()
-                val result = MoodleImport.collect(token, MoodleImport.tokyoToday(now), now / 1000, HttpPages())
+                val result = MoodleImport.collect(
+                    token,
+                    MoodleImport.tokyoToday(now),
+                    now / 1000,
+                    HttpPages()
+                ) { done, total ->
+                    main.post {
+                        if (phase != Phase.Importing) return@post
+                        progress = if (total == 0) 0f else done.toFloat() / total
+                        message = "履修科目を取り込んでいます。（$done/$total）"
+                    }
+                }
                 Outcome(resultText(result), timetable.replaceSelectedSlots(result.slots), false)
             } catch (error: ImportFailed) {
                 Outcome(error.message ?: "取り込みできません", false, error.unauthorized)
