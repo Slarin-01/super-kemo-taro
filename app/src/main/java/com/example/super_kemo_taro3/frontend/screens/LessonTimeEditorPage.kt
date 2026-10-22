@@ -97,7 +97,9 @@ class LessonTimeEditorActivity : AppCompatActivity() {
     }
 
     private fun returnHome() {
-        startActivity(Intent(this, HomeActivity::class.java))
+        startActivity(Intent(this, HomeActivity::class.java).addFlags(
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        ))
         finish()
     }
 }

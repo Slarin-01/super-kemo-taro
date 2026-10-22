@@ -1,5 +1,5 @@
 /*
- * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・テーマ・編集ボタンの表示。
+ * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・テーマ・下部ナビゲーションの表示。
  * 画面は表示と操作の通知を担当する。保存・通知制御・予約の判断はViewModelからサービスへ渡す。
  */
 package com.example.super_kemo_taro3.frontend.screens
@@ -7,6 +7,7 @@ package com.example.super_kemo_taro3.frontend.screens
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +23,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,11 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.example.super_kemo_taro3.app.appServices
 import com.example.super_kemo_taro3.frontend.viewmodel.HomeViewModel
+import com.example.super_kemo_taro3.frontend.viewmodel.MenuViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
 
 // 1. ホーム画面の起動とViewModelへの操作の接続
-/** ホームを開き、表示する状態とボタン操作をHomeViewModelへつなぐ。許可不足は端末の設定画面で案内する。 */
+/** ホームと設定を同じActivityで表示し、下部バーを保持したまま本文を切り替える。 */
 class HomeActivity : AppCompatActivity() {
+    private var destination by mutableStateOf(MainDestination.Home)
+    private lateinit var menuModel: MenuViewModel
+
     private val model by lazy {
         val services = appServices
         ViewModelProvider(this, ScreenViewModelFactory {
@@ -44,18 +52,44 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        destination = restoredDestination(
+            savedInstanceState?.getString(EXTRA_DESTINATION) ?: intent.getStringExtra(EXTRA_DESTINATION)
+        )
+        menuModel = ViewModelProvider(this, ScreenViewModelFactory {
+            MenuViewModel(savedInstanceState?.getBoolean("show_credits", false) ?: false)
+        })[MenuViewModel::class.java]
         model.refresh()
         setContent {
             AppScreen {
-                HomeScreen(
-                    blockedSlots = model.uiState.blockedSlots,
-                    paused = model.uiState.paused,
-                    onTogglePause = model::togglePause,
-                    onToggleTheme = {
-                        AppThemeController.apply(model.toggleTheme(AppThemeController.isDark(resources)))
-                    },
-                    onEdit = { startActivity(Intent(this, MenuActivity::class.java)) }
-                )
+                BackHandler(enabled = destination == MainDestination.Settings) {
+                    selectDestination(MainDestination.Home)
+                }
+                MainScreenScaffold(
+                    destination = destination,
+                    onHome = { selectDestination(MainDestination.Home) },
+                    onSettings = { selectDestination(MainDestination.Settings) }
+                ) { page ->
+                    when (page) {
+                        MainDestination.Home -> HomeScreen(
+                            blockedSlots = model.uiState.blockedSlots,
+                            paused = model.uiState.paused,
+                            onTogglePause = model::togglePause,
+                            onToggleTheme = {
+                                AppThemeController.apply(model.toggleTheme(AppThemeController.isDark(resources)))
+                            }
+                        )
+                        MainDestination.Settings -> MenuScreen(
+                            creditMessage = menuModel.creditMessage,
+                            showCredits = menuModel.showCredits,
+                            onOpenCredits = menuModel::openCredits,
+                            onCloseCredits = menuModel::closeCredits,
+                            onMoodle = { startActivity(Intent(this, MoodleImportActivity::class.java)) },
+                            onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
+                            onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
+                            onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) }
+                        )
+                    }
+                }
             }
         }
         // 許可の判定は処理側、設定画面を開く操作は画面側が担当する。
@@ -68,17 +102,40 @@ class HomeActivity : AppCompatActivity() {
         // 編集や端末設定から戻ったときに、最新の選択枠・一時停止を表示する。
         model.refresh()
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        selectDestination(restoredDestination(intent.getStringExtra(EXTRA_DESTINATION)))
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(EXTRA_DESTINATION, destination.name)
+        outState.putBoolean("show_credits", menuModel.showCredits)
+        super.onSaveInstanceState(outState)
+    }
+
+    private fun selectDestination(next: MainDestination) {
+        if (next == MainDestination.Home) model.refresh()
+        destination = next
+    }
+
+    private fun restoredDestination(name: String?): MainDestination =
+        MainDestination.entries.firstOrNull { it.name == name } ?: MainDestination.Home
+
+    companion object {
+        const val EXTRA_DESTINATION = "main_destination"
+    }
 }
 
 // 2. ホーム画面のCompose表示
-/** 停止・明暗切替・編集ボタン、停止状態、閲覧専用時間割を表示する。 */
+/** 停止・明暗切替ボタン、停止状態、閲覧専用時間割を表示する。下部バーは共通の親画面が持つ。 */
 @Composable
 fun HomeScreen(
     blockedSlots: Set<String>,
     paused: Boolean,
     onTogglePause: () -> Unit,
-    onToggleTheme: () -> Unit,
-    onEdit: () -> Unit
+    onToggleTheme: () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
     Column(
@@ -97,7 +154,6 @@ fun HomeScreen(
             color = if (paused) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
         TimetableGrid(blockedSlots)
-        Button(onClick = onEdit) { Text("編集") }
     }
 }
 
@@ -108,13 +164,14 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     AppScreen {
-        HomeScreen(
-            blockedSlots = setOf("MON_1", "TUE_3", "FRI_5"),
-            paused = false,
-            onTogglePause = {},
-            onToggleTheme = {},
-            onEdit = {}
-        )
+        MainScreenScaffold(destination = MainDestination.Home, onHome = {}, onSettings = {}) {
+            HomeScreen(
+                blockedSlots = setOf("MON_1", "TUE_3", "FRI_5"),
+                paused = false,
+                onTogglePause = {},
+                onToggleTheme = {}
+            )
+        }
     }
 }
 
