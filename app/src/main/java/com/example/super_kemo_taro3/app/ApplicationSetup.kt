@@ -16,6 +16,7 @@ import com.example.super_kemo_taro3.backend.service.NotificationModeService
 import com.example.super_kemo_taro3.backend.service.PauseService
 import com.example.super_kemo_taro3.backend.service.TimetableService
 import com.example.super_kemo_taro3.frontend.screens.AppThemeController
+import com.example.super_kemo_taro3.frontend.viewmodel.AppearanceState
 
 // 1. アプリ起動と保存テーマの適用
 /** 全画面・受信処理が使うサービスを保持し、起動時に保存テーマを適用する。Manifestに登録するApplication。 */
@@ -34,6 +35,7 @@ class BellApplication : Application() {
 class AppServices(context: Context) {
     // 画面と受信処理は同じ保存・処理インスタンスを使用する。
     val settings: SettingsRepository = SharedPreferencesSettingsRepository(context)
+    val appearance = AppearanceState(settings)
     private val alarms = AndroidAlarmScheduler(context)
     val notifications = NotificationModeService(AndroidNotificationGateway(context))
     val pause = PauseService(settings, notifications)

@@ -1,5 +1,5 @@
 /*
- * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・テーマ・下部ナビゲーションの表示。
+ * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・下部ナビゲーションの表示。
  * 画面は表示と操作の通知を担当する。保存・通知制御・予約の判断はViewModelからサービスへ渡す。
  */
 package com.example.super_kemo_taro3.frontend.screens
@@ -11,7 +11,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +44,7 @@ class HomeActivity : AppCompatActivity() {
     private val model by lazy {
         val services = appServices
         ViewModelProvider(this, ScreenViewModelFactory {
-            HomeViewModel(services.settings, services.timetable, services.pause, services.notifications)
+            HomeViewModel(services.timetable, services.pause, services.notifications)
         })[HomeViewModel::class.java]
     }
 
@@ -73,10 +72,7 @@ class HomeActivity : AppCompatActivity() {
                         MainDestination.Home -> HomeScreen(
                             blockedSlots = model.uiState.blockedSlots,
                             paused = model.uiState.paused,
-                            onTogglePause = model::togglePause,
-                            onToggleTheme = {
-                                AppThemeController.apply(model.toggleTheme(AppThemeController.isDark(resources)))
-                            }
+                            onTogglePause = model::togglePause
                         )
                         MainDestination.Settings -> MenuScreen(
                             creditMessage = menuModel.creditMessage,
@@ -86,7 +82,8 @@ class HomeActivity : AppCompatActivity() {
                             onMoodle = { startActivity(Intent(this, MoodleImportActivity::class.java)) },
                             onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
                             onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
-                            onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) }
+                            onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) },
+                            onThemeSettings = { startActivity(Intent(this, ThemeEditorActivity::class.java)) }
                         )
                     }
                 }
@@ -129,15 +126,13 @@ class HomeActivity : AppCompatActivity() {
 }
 
 // 2. ホーム画面のCompose表示
-/** 停止・明暗切替ボタン、停止状態、閲覧専用時間割を表示する。下部バーは共通の親画面が持つ。 */
+/** 停止ボタン、停止状態、閲覧専用時間割を表示する。下部バーは共通の親画面が持つ。 */
 @Composable
 fun HomeScreen(
     blockedSlots: Set<String>,
     paused: Boolean,
-    onTogglePause: () -> Unit,
-    onToggleTheme: () -> Unit
+    onTogglePause: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -145,9 +140,6 @@ fun HomeScreen(
     ) {
         Button(onClick = onTogglePause, modifier = Modifier.fillMaxWidth()) {
             Text("日曜日まで機能を停止")
-        }
-        Button(onClick = onToggleTheme, modifier = Modifier.fillMaxWidth()) {
-            Text(if (dark) "ホワイトモードへ" else "ダークモードへ")
         }
         Text(
             if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
@@ -168,8 +160,7 @@ private fun HomeScreenPreview() {
             HomeScreen(
                 blockedSlots = setOf("MON_1", "TUE_3", "FRI_5"),
                 paused = false,
-                onTogglePause = {},
-                onToggleTheme = {}
+                onTogglePause = {}
             )
         }
     }

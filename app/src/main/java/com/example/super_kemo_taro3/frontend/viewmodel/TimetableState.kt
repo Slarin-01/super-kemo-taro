@@ -1,5 +1,5 @@
 /*
- * フロントエンド・状態管理: ホームと時間割編集の選択枠・一時停止・テーマ操作の状態管理。
+ * フロントエンド・状態管理: ホームと時間割編集の選択枠・一時停止の状態管理。
  * 表示状態と未保存の入力を保持する。端末APIの直接操作を含めず、サービスや設定の契約へ依頼する。
  */
 package com.example.super_kemo_taro3.frontend.viewmodel
@@ -8,18 +8,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.example.super_kemo_taro3.backend.repository.SettingsRepository
 import com.example.super_kemo_taro3.backend.service.NotificationModeService
 import com.example.super_kemo_taro3.backend.service.PauseService
 import com.example.super_kemo_taro3.backend.service.TimetableService
 
-// 1. ホームの選択枠・一時停止・テーマ操作
+// 1. ホームの選択枠・一時停止
 /** ホームが表示する選択枠と一時停止の状態。枠名はMON_1などの保存用の名前。 */
 data class HomeUiState(val blockedSlots: Set<String> = emptySet(), val paused: Boolean = false)
 
-/** ホームの表示状態を管理し、停止・テーマ・許可確認を担当する処理へ依頼する。 */
+/** ホームの表示状態を管理し、停止・許可確認を担当する処理へ依頼する。 */
 class HomeViewModel(
-    private val settings: SettingsRepository,
     private val timetable: TimetableService,
     private val pause: PauseService,
     private val notifications: NotificationModeService
@@ -36,13 +34,6 @@ class HomeViewModel(
     fun togglePause() {
         pause.toggle()
         refresh()
-    }
-
-    fun toggleTheme(currentIsDark: Boolean): Boolean {
-        val next = !currentIsDark
-        // ここでは選択を保存する。実際の表示切り替えは画面側へ戻り値で依頼する。
-        settings.writeDarkMode(next)
-        return next
     }
 
     fun hasNotificationAccess(): Boolean = notifications.hasAccess()

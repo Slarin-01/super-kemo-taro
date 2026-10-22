@@ -32,25 +32,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.super_kemo_taro3.app.BellApplication
+import com.example.super_kemo_taro3.frontend.viewmodel.DEFAULT_THEME_COLOR
 
 // 1. 共通テーマと画面領域
 /** BellThemeがlightColorScheme・darkColorSchemeを設定し、AppScreenがSurface・Boxで画面の共通背景を提供する。 */
 @Composable
-fun BellTheme(content: @Composable () -> Unit) {
+fun BellTheme(
+    darkMode: Boolean? = null,
+    themeColor: Int = DEFAULT_THEME_COLOR,
+    content: @Composable () -> Unit
+) {
+    val dark = darkMode ?: isSystemInDarkTheme()
+    val colors = remember(themeColor, dark) { bellColorScheme(themeColor, dark) }
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme(),
+        colorScheme = colors,
         content = content
     )
 }
@@ -59,7 +67,10 @@ fun BellTheme(content: @Composable () -> Unit) {
 /** システムバーとキーボードを避ける余白を付け、各画面の内容を共通の背景へ載せる。 */
 @Composable
 fun AppScreen(content: @Composable () -> Unit) {
-    BellTheme {
+    // Previewは保存先へアクセスせず、実機の全Activityは同じ外観状態を購読する。
+    val appearance = if (LocalInspectionMode.current) null else
+        (LocalContext.current.applicationContext as? BellApplication)?.services?.appearance?.uiState
+    BellTheme(appearance?.darkMode, appearance?.color ?: DEFAULT_THEME_COLOR) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
                 content()
@@ -69,7 +80,7 @@ fun AppScreen(content: @Composable () -> Unit) {
 }
 
 // 2. ホームと編集画面で共用する時間割
-/** 40枠の表を表示し、選択済みを緑、未選択を灰色、文字を黒で描画する。クリック処理省略時は閲覧専用。 */
+/** 40枠の表をテーマの配色で表示する。クリック処理省略時は閲覧専用。 */
 @Composable
 fun TimetableGrid(blockedSlots: Set<String>, onSlotClick: ((String) -> Unit)? = null) {
     // ここは表示用の月〜金。FRIを実際に何曜日で動かすかはバックエンドのTimetableRulesで決める。
@@ -93,7 +104,8 @@ fun TimetableGrid(blockedSlots: Set<String>, onSlotClick: ((String) -> Unit)? = 
                     } else Modifier
                     Box(
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                            .background(if (isSelected) Color.Green else Color.LightGray)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceContainerHighest)
                             .then(clickModifier)
                             // 読み上げにも曜日・時限・選択状態を伝える。
                             .semantics {
@@ -102,7 +114,8 @@ fun TimetableGrid(blockedSlots: Set<String>, onSlotClick: ((String) -> Unit)? = 
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(period.toString(), color = Color.Black)
+                        Text(period.toString(), color = if (isSelected)
+                            MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -139,10 +152,12 @@ object AppThemeController {
         resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
     fun apply(isDark: Boolean?) {
-        // 未設定なら明暗を強制せず、端末側の表示設定を使う。
-        if (isDark == null) return
         AppCompatDelegate.setDefaultNightMode(
-            if (isDark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            when (isDark) {
+                true -> AppCompatDelegate.MODE_NIGHT_YES
+                false -> AppCompatDelegate.MODE_NIGHT_NO
+                null -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
         )
     }
 }

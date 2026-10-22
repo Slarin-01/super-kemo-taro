@@ -46,13 +46,15 @@ fun MenuScreen(
     onMoodle: () -> Unit,
     onTimetable: () -> Unit,
     onTimeSettings: () -> Unit,
-    onNotificationTest: () -> Unit
+    onNotificationTest: () -> Unit,
+    onThemeSettings: () -> Unit
 ) {
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.End
     ) {
+        Button(onClick = onThemeSettings, modifier = Modifier.fillMaxWidth()) { Text("テーマを編集") }
         Button(onClick = onMoodle, modifier = Modifier.fillMaxWidth()) { Text("履修を取り込む") }
         Button(onClick = onTimetable, modifier = Modifier.fillMaxWidth()) { Text("時刻設定") }
         Button(onClick = onTimeSettings, modifier = Modifier.fillMaxWidth()) { Text("時限カスタム") }
@@ -83,7 +85,8 @@ private fun MenuScreenPreview() {
                 onMoodle = {},
                 onTimetable = {},
                 onTimeSettings = {},
-                onNotificationTest = {}
+                onNotificationTest = {},
+                onThemeSettings = {}
             )
         }
     }
