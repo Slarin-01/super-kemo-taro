@@ -47,8 +47,13 @@ class MenuActivity : AppCompatActivity() {
                     showCredits = model.showCredits,
                     onOpenCredits = model::openCredits,
                     onCloseCredits = model::closeCredits,
-                    // メニューを残して開く。時間割編集・通知テストの「戻る」はここへ、時限カスタムの保存・破棄後はホームへ移る。
-                    onMain = { startActivity(Intent(this, HomeActivity::class.java)) },
+                    // ホームへは既存の画面を再利用し、タブ切替でActivityを積み重ねない。
+                    onMain = {
+                        startActivity(Intent(this, HomeActivity::class.java).addFlags(
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        ))
+                    },
+                    // 編集画面の「戻る」はここへ、時限カスタムの保存・破棄後はホームへ移る。
                     onMoodle = { startActivity(Intent(this, MoodleImportActivity::class.java)) },
                     onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
                     onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
@@ -66,7 +71,7 @@ class MenuActivity : AppCompatActivity() {
 }
 
 // 2. メニューとクレジットの表示
-/** メニューのボタンとクレジットダイアログを表示し、それぞれのコールバックを呼ぶ。 */
+/** 設定項目、下部ナビゲーションとクレジットダイアログを表示する。 */
 @Composable
 fun MenuScreen(
     creditMessage: String,
@@ -79,17 +84,22 @@ fun MenuScreen(
     onTimeSettings: () -> Unit,
     onNotificationTest: () -> Unit
 ) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.End
+    MainScreenScaffold(
+        destination = MainDestination.Settings,
+        onHome = onMain,
+        onSettings = {}
     ) {
-        Button(onClick = onMain, modifier = Modifier.fillMaxWidth()) { Text("時間割を見る") }
-        Button(onClick = onMoodle, modifier = Modifier.fillMaxWidth()) { Text("履修を取り込む") }
-        Button(onClick = onTimetable, modifier = Modifier.fillMaxWidth()) { Text("時刻設定") }
-        Button(onClick = onTimeSettings, modifier = Modifier.fillMaxWidth()) { Text("時限カスタム") }
-        Button(onClick = onNotificationTest, modifier = Modifier.fillMaxWidth()) { Text("通知切り替えテスト") }
-        Button(onClick = onOpenCredits) { Text("クレジット") }
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.End
+        ) {
+            Button(onClick = onMoodle, modifier = Modifier.fillMaxWidth()) { Text("履修を取り込む") }
+            Button(onClick = onTimetable, modifier = Modifier.fillMaxWidth()) { Text("時刻設定") }
+            Button(onClick = onTimeSettings, modifier = Modifier.fillMaxWidth()) { Text("時限カスタム") }
+            Button(onClick = onNotificationTest, modifier = Modifier.fillMaxWidth()) { Text("通知切り替えテスト") }
+            Button(onClick = onOpenCredits) { Text("クレジット") }
+        }
     }
     if (showCredits) {
         ConfirmationDialog(

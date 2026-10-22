@@ -1,5 +1,5 @@
 /*
- * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・テーマ・編集ボタンの表示。
+ * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・テーマ・下部ナビゲーションの表示。
  * 画面は表示と操作の通知を担当する。保存・通知制御・予約の判断はViewModelからサービスへ渡す。
  */
 package com.example.super_kemo_taro3.frontend.screens
@@ -54,7 +54,11 @@ class HomeActivity : AppCompatActivity() {
                     onToggleTheme = {
                         AppThemeController.apply(model.toggleTheme(AppThemeController.isDark(resources)))
                     },
-                    onEdit = { startActivity(Intent(this, MenuActivity::class.java)) }
+                    onSettings = {
+                        startActivity(Intent(this, MenuActivity::class.java).addFlags(
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        ))
+                    }
                 )
             }
         }
@@ -71,33 +75,38 @@ class HomeActivity : AppCompatActivity() {
 }
 
 // 2. ホーム画面のCompose表示
-/** 停止・明暗切替・編集ボタン、停止状態、閲覧専用時間割を表示する。 */
+/** 停止・明暗切替ボタン、停止状態、閲覧専用時間割と下部ナビゲーションを表示する。 */
 @Composable
 fun HomeScreen(
     blockedSlots: Set<String>,
     paused: Boolean,
     onTogglePause: () -> Unit,
     onToggleTheme: () -> Unit,
-    onEdit: () -> Unit
+    onSettings: () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    MainScreenScaffold(
+        destination = MainDestination.Home,
+        onHome = {},
+        onSettings = onSettings
     ) {
-        Button(onClick = onTogglePause, modifier = Modifier.fillMaxWidth()) {
-            Text("日曜日まで機能を停止")
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(onClick = onTogglePause, modifier = Modifier.fillMaxWidth()) {
+                Text("日曜日まで機能を停止")
+            }
+            Button(onClick = onToggleTheme, modifier = Modifier.fillMaxWidth()) {
+                Text(if (dark) "ホワイトモードへ" else "ダークモードへ")
+            }
+            Text(
+                if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
+                color = if (paused) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+            TimetableGrid(blockedSlots)
         }
-        Button(onClick = onToggleTheme, modifier = Modifier.fillMaxWidth()) {
-            Text(if (dark) "ホワイトモードへ" else "ダークモードへ")
-        }
-        Text(
-            if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
-            color = if (paused) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-        )
-        TimetableGrid(blockedSlots)
-        Button(onClick = onEdit) { Text("編集") }
     }
 }
 
@@ -113,7 +122,7 @@ private fun HomeScreenPreview() {
             paused = false,
             onTogglePause = {},
             onToggleTheme = {},
-            onEdit = {}
+            onSettings = {}
         )
     }
 }
