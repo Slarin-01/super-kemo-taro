@@ -35,6 +35,23 @@ class BackendWorkflowTest {
         assertEquals(listOf("MON_1"), alarms.cancellations)
     }
 
+    @Test fun replacementCancelsRemovedSlotsAndKeepsTheNewSet() {
+        settings.selected = setOf("MON_1", "FRI_5")
+        assertFalse(timetable.replaceSelectedSlots(setOf("FRI_5", "TUE_2", "BAD")))
+        assertEquals(setOf("FRI_5", "TUE_2"), settings.selected)
+        assertEquals(listOf("MON_1"), alarms.cancellations)
+        assertEquals(setOf("FRI_5", "TUE_2"), alarms.registrations.map { it.slot.key }.toSet())
+    }
+
+    @Test fun replacementWithoutPermissionStillSavesAndCancels() {
+        settings.selected = setOf("MON_1")
+        alarms.allowed = false
+        assertTrue(timetable.replaceSelectedSlots(setOf("TUE_2")))
+        assertEquals(setOf("TUE_2"), settings.selected)
+        assertEquals(listOf("MON_1"), alarms.cancellations)
+        assertTrue(alarms.registrations.isEmpty())
+    }
+
     @Test fun selectionWithoutPermissionStillPersists() {
         alarms.allowed = false
         assertTrue(timetable.toggleSlot("FRI_1"))

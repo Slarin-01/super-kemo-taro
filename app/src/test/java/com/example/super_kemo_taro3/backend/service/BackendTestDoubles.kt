@@ -1,6 +1,7 @@
 package com.example.super_kemo_taro3.backend.service
 
 import com.example.super_kemo_taro3.backend.service.LessonTime
+import com.example.super_kemo_taro3.backend.repository.MoodleLogin
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
 
 /** MemorySettingsRepository、RecordingAlarmScheduler、RecordingNotificationGatewayが設定保存と端末操作の依頼をメモリー上で記録する。 */
@@ -11,8 +12,14 @@ class MemorySettingsRepository : SettingsRepository {
     val times = mutableMapOf<String, String>()
     var darkMode: Boolean? = null
     var migrated = false
+    var moodleToken: String? = null
+    var moodleLogin: MoodleLogin? = null
     override fun readBlockedSlots() = selected.toSet()
     override fun writeBlockedSlots(slots: Set<String>) { selected = slots.toSet() }
+    override fun readMoodleToken() = moodleToken
+    override fun writeMoodleToken(token: String?) { moodleToken = token }
+    override fun readMoodleLogin() = moodleLogin
+    override fun writeMoodleLogin(login: MoodleLogin?) { moodleLogin = login }
     override fun readPauseUntil() = pauseUntil
     override fun writePauseUntil(deadline: Long?) { pauseUntil = deadline ?: 0L }
     override fun readTime(key: String) = times[key]

@@ -49,6 +49,7 @@ class MenuActivity : AppCompatActivity() {
                     onCloseCredits = model::closeCredits,
                     // メニューを残して開く。時間割編集・通知テストの「戻る」はここへ、時限カスタムの保存・破棄後はホームへ移る。
                     onMain = { startActivity(Intent(this, HomeActivity::class.java)) },
+                    onMoodle = { startActivity(Intent(this, MoodleImportActivity::class.java)) },
                     onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
                     onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
                     onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) }
@@ -65,7 +66,7 @@ class MenuActivity : AppCompatActivity() {
 }
 
 // 2. メニューとクレジットの表示
-/** 従来の5ボタンとクレジットダイアログを表示し、それぞれのコールバックを呼ぶ。 */
+/** メニューのボタンとクレジットダイアログを表示し、それぞれのコールバックを呼ぶ。 */
 @Composable
 fun MenuScreen(
     creditMessage: String,
@@ -73,6 +74,7 @@ fun MenuScreen(
     onOpenCredits: () -> Unit,
     onCloseCredits: () -> Unit,
     onMain: () -> Unit,
+    onMoodle: () -> Unit,
     onTimetable: () -> Unit,
     onTimeSettings: () -> Unit,
     onNotificationTest: () -> Unit
@@ -83,6 +85,7 @@ fun MenuScreen(
         horizontalAlignment = Alignment.End
     ) {
         Button(onClick = onMain, modifier = Modifier.fillMaxWidth()) { Text("時間割を見る") }
+        Button(onClick = onMoodle, modifier = Modifier.fillMaxWidth()) { Text("履修を取り込む") }
         Button(onClick = onTimetable, modifier = Modifier.fillMaxWidth()) { Text("時刻設定") }
         Button(onClick = onTimeSettings, modifier = Modifier.fillMaxWidth()) { Text("時限カスタム") }
         Button(onClick = onNotificationTest, modifier = Modifier.fillMaxWidth()) { Text("通知切り替えテスト") }
@@ -109,6 +112,7 @@ private fun MenuScreenPreview() {
             onOpenCredits = {},
             onCloseCredits = {},
             onMain = {},
+            onMoodle = {},
             onTimetable = {},
             onTimeSettings = {},
             onNotificationTest = {}
