@@ -51,6 +51,7 @@
             </intent-filter>
         </receiver>
         <activity android:name=".frontend.screens.MenuActivity" android:exported="false" />
+        <activity android:name=".frontend.screens.ThemeEditorActivity" android:exported="false" />
         <!-- Moodleのモバイル起動が koto-bell://token=... で戻す。ログイン開始時の照合に通ったトークンだけを保存する。 -->
         <activity
             android:name=".frontend.screens.MoodleImportActivity"

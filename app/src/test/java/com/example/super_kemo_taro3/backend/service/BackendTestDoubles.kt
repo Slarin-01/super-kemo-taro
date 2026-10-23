@@ -11,6 +11,7 @@ class MemorySettingsRepository : SettingsRepository {
     var pauseUntil = 0L
     val times = mutableMapOf<String, String>()
     var darkMode: Boolean? = null
+    var themeColor: Int? = null
     var migrated = false
     var moodleToken: String? = null
     var moodleLogin: MoodleLogin? = null
@@ -25,7 +26,9 @@ class MemorySettingsRepository : SettingsRepository {
     override fun readTime(key: String) = times[key]
     override fun writeTimes(times: Map<String, String>) { this.times.putAll(times) }
     override fun readDarkMode() = darkMode
-    override fun writeDarkMode(isDark: Boolean) { darkMode = isDark }
+    override fun writeDarkMode(isDark: Boolean?) { darkMode = isDark }
+    override fun readThemeColor() = themeColor
+    override fun writeThemeColor(color: Int) { themeColor = color }
     override fun isAlarmReceiverMigrated() = migrated
     override fun markAlarmReceiverMigrated() { migrated = true }
 }

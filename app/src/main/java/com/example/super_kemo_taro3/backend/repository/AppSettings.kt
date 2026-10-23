@@ -24,7 +24,9 @@ interface SettingsRepository {
     fun writeTimes(times: Map<String, String>)
     /** 未設定はnullを返し、端末の表示モードを引き継げるようにする。 */
     fun readDarkMode(): Boolean?
-    fun writeDarkMode(isDark: Boolean)
+    fun writeDarkMode(isDark: Boolean?)
+    fun readThemeColor(): Int?
+    fun writeThemeColor(color: Int)
     fun isAlarmReceiverMigrated(): Boolean
     fun markAlarmReceiverMigrated()
 }
@@ -93,8 +95,17 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
     override fun readDarkMode(): Boolean? =
         if (theme.contains("is_dark_mode")) theme.getBoolean("is_dark_mode", false) else null
 
-    override fun writeDarkMode(isDark: Boolean) {
-        theme.edit().putBoolean("is_dark_mode", isDark).apply()
+    override fun writeDarkMode(isDark: Boolean?) {
+        theme.edit().apply {
+            if (isDark == null) remove("is_dark_mode") else putBoolean("is_dark_mode", isDark)
+        }.apply()
+    }
+
+    override fun readThemeColor(): Int? =
+        if (theme.contains("theme_color")) theme.getInt("theme_color", 0) and 0xFFFFFF else null
+
+    override fun writeThemeColor(color: Int) {
+        theme.edit().putInt("theme_color", color and 0xFFFFFF).apply()
     }
 
     override fun isAlarmReceiverMigrated(): Boolean =
