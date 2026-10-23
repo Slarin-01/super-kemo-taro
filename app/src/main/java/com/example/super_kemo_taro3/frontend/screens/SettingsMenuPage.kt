@@ -8,20 +8,35 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.super_kemo_taro3.R
 
 // 1. メニューの起動と画面遷移
 /** 既存のメニュー起動先は維持し、共通の親画面にある設定タブへ渡す。 */
@@ -36,7 +51,7 @@ class MenuActivity : AppCompatActivity() {
 }
 
 // 2. メニューとクレジットの表示
-/** 設定項目とクレジットダイアログを表示する。下部バーは共通の親画面が持つ。 */
+/** 大きな見出しと、アイコン・説明文付きの設定リストを表示する。 */
 @Composable
 fun MenuScreen(
     creditMessage: String,
@@ -47,25 +62,112 @@ fun MenuScreen(
     onTimetable: () -> Unit,
     onTimeSettings: () -> Unit,
     onNotificationTest: () -> Unit,
-    onThemeSettings: () -> Unit
+    onThemeSettings: () -> Unit,
+    paused: Boolean,
+    onTogglePause: () -> Unit
 ) {
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.End
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp).padding(top = 40.dp, bottom = 24.dp)
     ) {
-        Button(onClick = onThemeSettings, modifier = Modifier.fillMaxWidth()) { Text("テーマを編集") }
-        Button(onClick = onMoodle, modifier = Modifier.fillMaxWidth()) { Text("履修を取り込む") }
-        Button(onClick = onTimetable, modifier = Modifier.fillMaxWidth()) { Text("時刻設定") }
-        Button(onClick = onTimeSettings, modifier = Modifier.fillMaxWidth()) { Text("時限カスタム") }
-        Button(onClick = onNotificationTest, modifier = Modifier.fillMaxWidth()) { Text("通知切り替えテスト") }
-        Button(onClick = onOpenCredits) { Text("クレジット") }
+        Text(
+            "設定",
+            modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 40.dp),
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Normal
+            )
+        )
+        val entries = listOf(
+            SettingsMenuEntry(
+                "日曜日まで機能を停止",
+                if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
+                R.drawable.ic_menu_pause,
+                onTogglePause,
+                checked = paused
+            ),
+            SettingsMenuEntry("テーマを編集", "ライト・ダークやテーマカラーを変更します", R.drawable.ic_menu_palette, onThemeSettings),
+            SettingsMenuEntry("履修を取り込む", "Moodleから履修情報を取り込みます", R.drawable.ic_menu_import, onMoodle),
+            SettingsMenuEntry("時刻設定", "通知を抑える曜日と時限を選びます", R.drawable.ic_menu_timetable, onTimetable),
+            SettingsMenuEntry("時限カスタム", "各時限の開始・終了時刻を変更します", R.drawable.ic_menu_clock, onTimeSettings),
+            SettingsMenuEntry("通知切り替えテスト", "通知のミュート・解除を確認します", R.drawable.ic_menu_notifications, onNotificationTest),
+            SettingsMenuEntry("クレジット", "アプリの情報・制作メンバーを表示します", R.drawable.ic_menu_info, onOpenCredits)
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            entries.forEachIndexed { index, entry ->
+                SettingsMenuRow(
+                    entry = entry,
+                    first = index == 0,
+                    last = index == entries.lastIndex
+                )
+            }
+        }
     }
     if (showCredits) {
         ConfirmationDialog(
             title = "クレジット", message = creditMessage, confirmText = "閉じる",
             onConfirm = onCloseCredits, onDismiss = onCloseCredits, showCancel = false
         )
+    }
+}
+
+private data class SettingsMenuEntry(
+    val title: String,
+    val description: String,
+    val icon: Int,
+    val onClick: () -> Unit,
+    val checked: Boolean? = null
+)
+
+/** 行全体を押せる面にし、先頭と末尾に大きな角丸を付けてひとまとまりに見せる。 */
+@Composable
+private fun SettingsMenuRow(entry: SettingsMenuEntry, first: Boolean, last: Boolean) {
+    val shape = RoundedCornerShape(
+        topStart = if (first) 24.dp else 4.dp,
+        topEnd = if (first) 24.dp else 4.dp,
+        bottomStart = if (last) 24.dp else 4.dp,
+        bottomEnd = if (last) 24.dp else 4.dp
+    )
+    val action = if (entry.checked != null) {
+        Modifier.toggleable(value = entry.checked, role = Role.Switch, onValueChange = { entry.onClick() })
+    } else {
+        Modifier.clickable(role = Role.Button, onClick = entry.onClick)
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 88.dp).clip(shape).then(action),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Row(
+            Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(entry.icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(26.dp)
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    entry.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Normal
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    entry.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (entry.checked == true) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (entry.checked != null) {
+                // 操作は行全体で受け取り、スイッチをタップした際の二重切り替えを防ぐ。
+                Switch(checked = entry.checked, onCheckedChange = null)
+            }
+        }
     }
 }
 
@@ -86,7 +188,9 @@ private fun MenuScreenPreview() {
                 onTimetable = {},
                 onTimeSettings = {},
                 onNotificationTest = {},
-                onThemeSettings = {}
+                onThemeSettings = {},
+                paused = false,
+                onTogglePause = {}
             )
         }
     }

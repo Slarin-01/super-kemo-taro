@@ -1,5 +1,5 @@
 /*
- * フロントエンド・画面: ホーム画面の起動、状態の接続、一時停止・下部ナビゲーションの表示。
+ * フロントエンド・画面: ホーム・設定の起動、状態の接続、下部ナビゲーションの表示。
  * 画面は表示と操作の通知を担当する。保存・通知制御・予約の判断はViewModelからサービスへ渡す。
  */
 package com.example.super_kemo_taro3.frontend.screens
@@ -11,21 +11,15 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,9 +64,7 @@ class HomeActivity : AppCompatActivity() {
                 ) { page ->
                     when (page) {
                         MainDestination.Home -> HomeScreen(
-                            blockedSlots = model.uiState.blockedSlots,
-                            paused = model.uiState.paused,
-                            onTogglePause = model::togglePause
+                            blockedSlots = model.uiState.blockedSlots
                         )
                         MainDestination.Settings -> MenuScreen(
                             creditMessage = menuModel.creditMessage,
@@ -83,7 +75,9 @@ class HomeActivity : AppCompatActivity() {
                             onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
                             onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
                             onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) },
-                            onThemeSettings = { startActivity(Intent(this, ThemeEditorActivity::class.java)) }
+                            onThemeSettings = { startActivity(Intent(this, ThemeEditorActivity::class.java)) },
+                            paused = model.uiState.paused,
+                            onTogglePause = model::togglePause
                         )
                     }
                 }
@@ -113,7 +107,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun selectDestination(next: MainDestination) {
-        if (next == MainDestination.Home) model.refresh()
+        // 設定タブへ移るときも、停止期限が過ぎていないか確認する。
+        model.refresh()
         destination = next
     }
 
@@ -126,25 +121,14 @@ class HomeActivity : AppCompatActivity() {
 }
 
 // 2. ホーム画面のCompose表示
-/** 停止ボタン、停止状態、閲覧専用時間割を表示する。下部バーは共通の親画面が持つ。 */
+/** 閲覧専用の時間割を表示する。下部バーは共通の親画面が持つ。 */
 @Composable
 fun HomeScreen(
-    blockedSlots: Set<String>,
-    paused: Boolean,
-    onTogglePause: () -> Unit
+    blockedSlots: Set<String>
 ) {
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
     ) {
-        Button(onClick = onTogglePause, modifier = Modifier.fillMaxWidth()) {
-            Text("日曜日まで機能を停止")
-        }
-        Text(
-            if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
-            color = if (paused) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-        )
         TimetableGrid(blockedSlots)
     }
 }
@@ -158,9 +142,7 @@ private fun HomeScreenPreview() {
     AppScreen {
         MainScreenScaffold(destination = MainDestination.Home, onHome = {}, onSettings = {}) {
             HomeScreen(
-                blockedSlots = setOf("MON_1", "TUE_3", "FRI_5"),
-                paused = false,
-                onTogglePause = {}
+                blockedSlots = setOf("MON_1", "TUE_3", "FRI_5")
             )
         }
     }

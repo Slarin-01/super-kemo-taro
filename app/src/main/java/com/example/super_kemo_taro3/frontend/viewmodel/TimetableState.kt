@@ -13,7 +13,7 @@ import com.example.super_kemo_taro3.backend.service.PauseService
 import com.example.super_kemo_taro3.backend.service.TimetableService
 
 // 1. ホームの選択枠・一時停止
-/** ホームが表示する選択枠と一時停止の状態。枠名はMON_1などの保存用の名前。 */
+/** ホーム・設定が共用する選択枠と一時停止の状態。枠名はMON_1などの保存用の名前。 */
 data class HomeUiState(val blockedSlots: Set<String> = emptySet(), val paused: Boolean = false)
 
 /** ホームの表示状態を管理し、停止・許可確認を担当する処理へ依頼する。 */
