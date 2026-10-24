@@ -2,12 +2,15 @@ package com.example.super_kemo_taro3.backend.service
 
 import com.example.super_kemo_taro3.backend.service.LessonTime
 import com.example.super_kemo_taro3.backend.repository.MoodleLogin
+import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
 
 /** MemorySettingsRepository、RecordingAlarmScheduler、RecordingNotificationGatewayが設定保存と端末操作の依頼をメモリー上で記録する。 */
 class MemorySettingsRepository : SettingsRepository {
     // 本番と同じ読み書きの形で、設定値だけをメモリーに保持する。
     var selected: Set<String> = emptySet()
+    var subjects: Map<String, String> = emptyMap()
+    var courseLinks: Map<String, List<CourseLinks>> = emptyMap()
     var pauseUntil = 0L
     val times = mutableMapOf<String, String>()
     var darkMode: Boolean? = null
@@ -17,6 +20,12 @@ class MemorySettingsRepository : SettingsRepository {
     var moodleLogin: MoodleLogin? = null
     override fun readBlockedSlots() = selected.toSet()
     override fun writeBlockedSlots(slots: Set<String>) { selected = slots.toSet() }
+    override fun readSlotSubjects() = subjects.toMap()
+    override fun writeSlotSubjects(subjects: Map<String, String>) { this.subjects = subjects.toMap() }
+    override fun readSlotCourseLinks() = courseLinks.mapValues { it.value.toList() }
+    override fun writeSlotCourseLinks(links: Map<String, List<CourseLinks>>) {
+        courseLinks = links.mapValues { it.value.toList() }
+    }
     override fun readMoodleToken() = moodleToken
     override fun writeMoodleToken(token: String?) { moodleToken = token }
     override fun readMoodleLogin() = moodleLogin

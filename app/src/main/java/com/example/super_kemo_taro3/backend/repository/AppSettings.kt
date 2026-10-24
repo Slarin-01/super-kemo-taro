@@ -5,14 +5,26 @@
 package com.example.super_kemo_taro3.backend.repository
 
 import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
+
+private const val SLOT_SUBJECT_PREFIX = "slot_subject_"
+private const val SLOT_LINKS_PREFIX = "slot_links_"
 
 // 1. 呼び出し側が利用する設定保存の契約
 data class MoodleLogin(val siteId: String, val expiresAt: Long)
+
+/** 同じ時限に複数科目がある場合も、科目名と2つのリンクの組を保持する。 */
+data class CourseLinks(val subject: String, val moodleUrl: String? = null, val syllabusUrl: String? = null)
 
 /** 画面の状態管理とサービスが共用する設定の窓口。保存先の名前やキーは実装側で管理する。 */
 interface SettingsRepository {
     fun readBlockedSlots(): Set<String>
     fun writeBlockedSlots(slots: Set<String>)
+    fun readSlotSubjects(): Map<String, String>
+    fun writeSlotSubjects(subjects: Map<String, String>)
+    fun readSlotCourseLinks(): Map<String, List<CourseLinks>>
+    fun writeSlotCourseLinks(links: Map<String, List<CourseLinks>>)
     fun readMoodleToken(): String?
     fun writeMoodleToken(token: String?)
     fun readMoodleLogin(): MoodleLogin?
@@ -46,6 +58,53 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
 
     override fun writeBlockedSlots(slots: Set<String>) {
         timetable.edit().putStringSet("blocked_slots", slots.toSet()).apply()
+    }
+
+    override fun readSlotSubjects(): Map<String, String> = timetable.all.mapNotNull { (key, value) ->
+        if (key.startsWith(SLOT_SUBJECT_PREFIX) && value is String) {
+            key.removePrefix(SLOT_SUBJECT_PREFIX) to value
+        } else null
+    }.toMap()
+
+    override fun writeSlotSubjects(subjects: Map<String, String>) {
+        timetable.edit().apply {
+            timetable.all.keys.filter { it.startsWith(SLOT_SUBJECT_PREFIX) }.forEach { remove(it) }
+            subjects.forEach { (slot, subject) -> putString("$SLOT_SUBJECT_PREFIX$slot", subject) }
+        }.apply()
+    }
+
+    override fun readSlotCourseLinks(): Map<String, List<CourseLinks>> =
+        timetable.all.mapNotNull { (key, value) ->
+            if (!key.startsWith(SLOT_LINKS_PREFIX) || value !is String) return@mapNotNull null
+            val links = runCatching {
+                val array = JSONArray(value)
+                (0 until array.length()).mapNotNull course@ { index ->
+                    val item = array.optJSONObject(index) ?: return@course null
+                    CourseLinks(
+                        subject = item.optString("subject"),
+                        moodleUrl = item.optString("moodle").takeIf { it.isNotBlank() },
+                        syllabusUrl = item.optString("syllabus").takeIf { it.isNotBlank() }
+                    )
+                }
+            }.getOrDefault(emptyList())
+            key.removePrefix(SLOT_LINKS_PREFIX) to links
+        }.toMap()
+
+    override fun writeSlotCourseLinks(links: Map<String, List<CourseLinks>>) {
+        timetable.edit().apply {
+            timetable.all.keys.filter { it.startsWith(SLOT_LINKS_PREFIX) }.forEach { remove(it) }
+            links.forEach { (slot, courses) ->
+                val array = JSONArray()
+                courses.forEach { course ->
+                    array.put(JSONObject().apply {
+                        put("subject", course.subject)
+                        put("moodle", course.moodleUrl)
+                        put("syllabus", course.syllabusUrl)
+                    })
+                }
+                putString("$SLOT_LINKS_PREFIX$slot", array.toString())
+            }
+        }.apply()
     }
 
     override fun readMoodleToken(): String? = timetable.getString("moodle_token", null)

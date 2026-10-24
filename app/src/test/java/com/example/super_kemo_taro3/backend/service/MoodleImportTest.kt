@@ -45,16 +45,22 @@ class MoodleImportTest {
         val pages = FixturePages()
         val result = MoodleImport.collect("token", today, nowEpoch, pages)
         assertEquals(setOf("THU_5", "THU_6", "MON_1", "TUE_1", "FRI_8"), result.slots)
+        assertEquals(mapOf(
+            "THU_5" to "情報処理", "THU_6" to "情報処理", "MON_1" to "情報処理",
+            "TUE_1" to "特別研究", "FRI_8" to "科目"
+        ), result.subjects)
         assertEquals(2, result.unmatched)
         assertTrue(pages.posts.all { it["__VIEWSTATE"] == "view" && it[searchButton] == "検 索" })
         assertEquals(listOf("2026010001", "2026010002", "2026010003", "2026010004", "2026010005"), pages.codes)
     }
 
     @Test fun letterLectureCodeImportsTheMondaySlot() {
-        val pages = FixturePages(courses = """[{"idnumber":"202602B409","fullname":"月曜の実験","enddate":0}]""")
+        val pages = FixturePages(courses = """[{"id":409,"idnumber":"202602B409","fullname":"月曜の実験","enddate":0}]""")
         val result = MoodleImport.collect("token", today, nowEpoch, pages)
         assertEquals(setOf("MON_1", "MON_2", "MON_3", "MON_4"), result.slots)
         assertEquals(0, result.unmatched)
+        assertEquals("${MoodleImport.ORIGIN}/course/view.php?id=409", result.courseLinks["MON_1"]?.single()?.moodleUrl)
+        assertEquals(result.courseLinks["MON_1"], result.courseLinks["MON_4"])
     }
 
     @Test fun everyListedSlotIsImportedIncludingMonday() {
@@ -69,6 +75,44 @@ class MoodleImportTest {
             """<table id="ctl00_phContents_ucGrid_grv"><tr>${cells("2026027632", "第３学期", "10月21日")}</tr></table>"""
         ).single()
         assertTrue(MoodleImport.muteKeys(dated).isEmpty())
+    }
+
+    @Test fun importedSubjectsAreSavedAndReturnedWithTheNextLesson() {
+        val result = MoodleImport.collect("token", today, nowEpoch, FixturePages())
+        val settings = MemorySettingsRepository()
+        val timetable = TimetableService(settings, RecordingAlarmScheduler())
+        timetable.replaceSelectedSlots(result.slots, result.subjects, result.courseLinks)
+        val now = java.util.Calendar.getInstance().apply {
+            clear()
+            set(2026, java.util.Calendar.OCTOBER, 19, 8, 0)
+        }.timeInMillis
+
+        assertEquals("MON_1", timetable.readNextLesson(now)?.slot?.key)
+        assertEquals("情報処理", timetable.readNextLesson(now)?.subject)
+        val links = timetable.readLessonsForDay(java.util.Calendar.MONDAY).single().courseLinks.single()
+        assertEquals("情報処理", links.subject)
+        assertEquals("${MoodleImport.ORIGIN}/course/view.php?id=101", links.moodleUrl)
+        assertEquals(
+            "https://kyomu.adm.okayama-u.ac.jp/Portal/Public/Syllabus/DetailMain.aspx?lct_year=2026&lct_cd=2026010001&je_cd=1",
+            links.syllabusUrl
+        )
+    }
+
+    @Test fun subjectsSharingASlotAreKeptTogether() {
+        val pages = FixturePages(courses = """[
+            {"id":101,"idnumber":"2026010001","enddate":0},
+            {"id":409,"idnumber":"202602B409","enddate":0}
+        ]""")
+
+        val result = MoodleImport.collect("token", today, nowEpoch, pages)
+
+        assertEquals("情報処理 / 基礎実験", result.subjects["MON_1"])
+        assertEquals("基礎実験", result.subjects["MON_2"])
+        val links = result.courseLinks.getValue("MON_1")
+        assertEquals(listOf("情報処理", "基礎実験"), links.map { it.subject })
+        assertEquals(listOf(101L, 409L).map(CourseLinkRules::moodleUrl), links.map { it.moodleUrl })
+        assertTrue(links[0].syllabusUrl.orEmpty().contains("lct_cd=2026010001"))
+        assertTrue(links[1].syllabusUrl.orEmpty().contains("lct_cd=202602B409"))
     }
 
     @Test fun rejectsUnlistedHostsBeforeConnecting() {
@@ -87,7 +131,7 @@ class MoodleImportTest {
 private class FixturePages(
     private val courses: String = """
         [
-          {"idnumber":"2026010001","fullname":"情報処理","enddate":0},
+          {"id":101,"idnumber":"2026010001","fullname":"情報処理","enddate":0},
           {"idnumber":"2026010002","fullname":"前期の授業","enddate":0},
           {"idnumber":"2026010003","fullname":"土曜","enddate":0},
           {"idnumber":"","fullname":"[2026010004] 通年","enddate":0},
@@ -136,15 +180,15 @@ private const val calendar = """
 
 private fun syllabus(code: String): String {
     val row = when (code) {
-        "2026010001" -> cells(code, "第３学期", "木5〜6 月1")
-        "202602B409" -> cells(code, "3・4学期", "月1〜4")
+        "2026010001" -> cells(code, "第３学期", "木5〜6 月1", "情報処理")
+        "202602B409" -> cells(code, "3・4学期", "月1〜4", "基礎実験")
         "2026010002" -> cells(code, "前期", "月1")
         "2026010003" -> cells(code, "第3学期", "土1")
-        "2026010004" -> cells(code, "通年", "火1")
+        "2026010004" -> cells(code, "通年", "火1", "特別研究")
         else -> cells(code, "第3学期", "金8〜10")
     }
     return """<table id="ctl00_phContents_ucGrid_grv"><tr>$row</tr></table>"""
 }
 
-private fun cells(code: String, term: String, slot: String) =
-    "<td>1</td><td>2026</td><td><a href=DetailMain.aspx?lct_year=2026&lct_cd=$code&je_cd=1 target=_blank>講義</a></td><td></td><td>科目</td><td>教員</td><td>$term</td><td>$slot</td>"
+private fun cells(code: String, term: String, slot: String, subject: String = "科目") =
+    "<td>1</td><td>2026</td><td><a href=DetailMain.aspx?lct_year=2026&lct_cd=$code&je_cd=1 target=_blank>講義</a></td><td></td><td>$subject</td><td>教員</td><td>$term</td><td>$slot</td>"

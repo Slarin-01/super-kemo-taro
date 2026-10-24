@@ -5,11 +5,29 @@
 package com.example.super_kemo_taro3.backend.service
 
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
+import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import java.util.Calendar
 
 // 1. 表示・保存キーと内部曜日の対応
 /** 選択枠の保存キー、実際に動かす曜日、1〜8限の番号をまとめる。 */
 data class TimetableSlot(val key: String, val calendarDay: Int, val lesson: Int)
+
+/** ホームに表示する次の授業。開始日時は端末のタイムゾーンで計算する。 */
+data class NextLesson(
+    val slot: TimetableSlot,
+    val startsAt: Long,
+    val endTime: LessonTime,
+    val subject: String? = null
+)
+
+/** 曜日ごとの一覧に表示する授業。開始済みの授業も含めて扱う。 */
+data class TimetableLesson(
+    val slot: TimetableSlot,
+    val startTime: LessonTime,
+    val endTime: LessonTime,
+    val subject: String? = null,
+    val courseLinks: List<CourseLinks> = emptyList()
+)
 
 /** MON_1などの保存キーを解釈する。表示曜日と動作曜日の対応はここだけで管理する。 */
 object TimetableRules {
@@ -69,6 +87,28 @@ class TimetableService(
 ) {
     fun readSelectedSlots(): Set<String> = settings.readBlockedSlots()
 
+    /** 指定曜日の登録済み授業を時限順で返す。表示する時刻はアラームと共通の読み取り方を使う。 */
+    fun readLessonsForDay(day: Int): List<TimetableLesson> {
+        val subjects = settings.readSlotSubjects()
+        val links = settings.readSlotCourseLinks()
+        return settings.readBlockedSlots().mapNotNull { key ->
+            val slot = TimetableRules.parseSlot(key)?.takeIf { it.calendarDay == day }
+                ?: return@mapNotNull null
+            val (start, end) = readSlotTimes(slot, useDefaults = true) ?: return@mapNotNull null
+            TimetableLesson(slot, start, end, subjects[key], links[key].orEmpty())
+        }.sortedBy { it.slot.lesson }
+    }
+
+    /** 開始前の選択枠から最も近い授業を返す。未保存時刻はアラームと同じ既定値を使う。 */
+    fun readNextLesson(now: Long = System.currentTimeMillis()): NextLesson? =
+        settings.readBlockedSlots().mapNotNull { key ->
+            val slot = TimetableRules.parseSlot(key) ?: return@mapNotNull null
+            val (start, end) = readSlotTimes(slot, useDefaults = true) ?: return@mapNotNull null
+            NextLesson(slot, ScheduleCalculator.nextOccurrence(slot.calendarDay, start, now), end)
+        }.minByOrNull { it.startsAt }?.let { next ->
+            next.copy(subject = settings.readSlotSubjects()[next.slot.key])
+        }
+
     fun canScheduleAlarms(): Boolean = alarms.canScheduleExactAlarms()
 
     /** 選択を反転する。trueは新規予約に必要な許可が不足し、画面で設定案内が必要なことを表す。 */
@@ -89,13 +129,21 @@ class TimetableService(
     }
 
     /** 選択枠を置き換える。外した枠の予約は消し、権限があれば新しい枠を予約する。trueは予約の許可不足。 */
-    fun replaceSelectedSlots(keys: Set<String>): Boolean {
+    fun replaceSelectedSlots(
+        keys: Set<String>,
+        subjects: Map<String, String> = emptyMap(),
+        courseLinks: Map<String, List<CourseLinks>> = emptyMap()
+    ): Boolean {
         val next = keys.filter { TimetableRules.parseSlot(it) != null }.toSet()
         val previous = settings.readBlockedSlots()
         (previous - next).forEach { alarms.cancelSlot(it) }
         val needsPermission = !alarms.canScheduleExactAlarms()
         if (!needsPermission) next.forEach { registerSlot(it, useDefaults = true) }
         settings.writeBlockedSlots(next)
+        settings.writeSlotSubjects(subjects.filterKeys { it in next }
+            .mapValues { it.value.trim() }.filterValues { it.isNotEmpty() })
+        settings.writeSlotCourseLinks(courseLinks.filterKeys { it in next }
+            .mapValues { it.value.distinct() }.filterValues { it.isNotEmpty() })
         return needsPermission
     }
 
@@ -132,12 +180,17 @@ class TimetableService(
     private fun registerSlot(key: String, useDefaults: Boolean) {
         // 不正な枠は予約しない。選択・復元時は未保存や読み取れない時刻部分を既定値で補い、保存後は保存値だけを使う。
         val slot = TimetableRules.parseSlot(key) ?: return
+        val (start, end) = readSlotTimes(slot, useDefaults) ?: return
+        alarms.scheduleSlot(slot, start, end)
+    }
+
+    private fun readSlotTimes(slot: TimetableSlot, useDefaults: Boolean): Pair<LessonTime, LessonTime>? {
         val index = (slot.lesson - 1) * 2
         val startField = LessonTimeDefaults.alarmFields[index]
         val endField = LessonTimeDefaults.alarmFields[index + 1]
-        val start = readAlarmTime(startField.saveKey, startField.defaultTime, useDefaults) ?: return
-        val end = readAlarmTime(endField.saveKey, endField.defaultTime, useDefaults) ?: return
-        alarms.scheduleSlot(slot, start, end)
+        val start = readAlarmTime(startField.saveKey, startField.defaultTime, useDefaults) ?: return null
+        val end = readAlarmTime(endField.saveKey, endField.defaultTime, useDefaults) ?: return null
+        return start to end
     }
 
     // 既定値を使う経路では、時刻文字列の時・分をそれぞれ補い、従来の読み取り方を引き継ぐ。
