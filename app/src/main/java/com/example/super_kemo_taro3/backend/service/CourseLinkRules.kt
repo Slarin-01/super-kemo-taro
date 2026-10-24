@@ -3,6 +3,8 @@ package com.example.super_kemo_taro3.backend.service
 import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import java.net.URI
 
+enum class CoursePage { MOODLE, SYLLABUS }
+
 /** 履修先のコースIDと、シラバスが返した詳細リンクからブラウザ用URLを作る。 */
 object CourseLinkRules {
     private val moodle = URI(MoodleImport.ORIGIN)
@@ -22,16 +24,20 @@ object CourseLinkRules {
     }.getOrNull()
 
     /** 保存済みのリンクも大学のHTTPSページだけを起動対象にする。 */
-    fun browserUrls(links: CourseLinks): List<String> = listOfNotNull(
-        links.moodleUrl?.takeIf { value ->
+    fun browserUrls(links: CourseLinks): List<String> =
+        CoursePage.entries.mapNotNull { browserUrl(links, it) }.distinct()
+
+    /** 選んだページだけを返す。未登録の場合は別のページで補わない。 */
+    fun browserUrl(links: CourseLinks, page: CoursePage): String? = when (page) {
+        CoursePage.MOODLE -> links.moodleUrl?.takeIf { value ->
             runCatching {
                 val uri = URI(value)
                 allowed(uri, moodle.host, "/course/view.php") &&
                     Regex("id=[1-9][0-9]*").matches(uri.rawQuery.orEmpty())
             }.getOrDefault(false)
-        },
-        links.syllabusUrl?.takeIf { syllabusUrl(it) == it }
-    ).distinct()
+        }
+        CoursePage.SYLLABUS -> links.syllabusUrl?.takeIf { syllabusUrl(it) == it }
+    }
 
     private fun allowed(uri: URI, host: String, path: String): Boolean =
         uri.scheme == "https" && uri.host.equals(host, ignoreCase = true) &&

@@ -44,4 +44,19 @@ class CourseLinkRulesTest {
             "実験", "intent://course/409", "https://example.test/$detail"
         )).isEmpty())
     }
+
+    @Test fun selectsOnlyTheRequestedPage() {
+        val moodle = requireNotNull(CourseLinkRules.moodleUrl(409))
+        val links = CourseLinks("実験", moodle, syllabus)
+
+        assertEquals(moodle, CourseLinkRules.browserUrl(links, CoursePage.MOODLE))
+        assertEquals(syllabus, CourseLinkRules.browserUrl(links, CoursePage.SYLLABUS))
+    }
+
+    @Test fun aMissingOrInvalidPageDoesNotOpenTheOtherPage() {
+        val moodle = requireNotNull(CourseLinkRules.moodleUrl(409))
+        assertNull(CourseLinkRules.browserUrl(CourseLinks("実験", syllabusUrl = syllabus), CoursePage.MOODLE))
+        assertNull(CourseLinkRules.browserUrl(CourseLinks("実験", moodleUrl = moodle), CoursePage.SYLLABUS))
+        assertNull(CourseLinkRules.browserUrl(CourseLinks("実験", "intent://course/409", syllabus), CoursePage.MOODLE))
+    }
 }

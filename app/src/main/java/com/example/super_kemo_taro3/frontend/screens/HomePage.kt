@@ -11,9 +11,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,7 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -42,6 +43,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.super_kemo_taro3.app.appServices
 import com.example.super_kemo_taro3.backend.service.LessonTime
+import com.example.super_kemo_taro3.backend.service.CoursePage
 import com.example.super_kemo_taro3.backend.service.LessonTimeRules
 import com.example.super_kemo_taro3.backend.service.NextLesson
 import com.example.super_kemo_taro3.backend.service.TimetableLesson
@@ -108,7 +110,7 @@ class HomeActivity : AppCompatActivity() {
                             selectedDay = model.uiState.selectedDay,
                             dayLessons = model.uiState.dayLessons,
                             onSlotClick = model::selectDay,
-                            onLessonClick = { LessonBrowserNavigator.open(this, it) }
+                            onOpenLessonPage = { lesson, page -> LessonBrowserNavigator.open(this, lesson, page) }
                         )
                         MainDestination.Settings -> MenuScreen(
                             creditMessage = menuModel.creditMessage,
@@ -173,7 +175,7 @@ fun HomeScreen(
     selectedDay: Int? = null,
     dayLessons: List<TimetableLesson> = emptyList(),
     onSlotClick: (String) -> Unit = {},
-    onLessonClick: (TimetableLesson) -> Unit = {}
+    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> }
 ) {
     val dayLessonsRequester = remember { BringIntoViewRequester() }
     LaunchedEffect(selectedDay) {
@@ -196,7 +198,7 @@ fun HomeScreen(
         TimetableGrid(blockedSlots, onSlotClick = onSlotClick)
         if (selectedDay != null) {
             DayLessonsCard(
-                selectedDay, dayLessons, Modifier.bringIntoViewRequester(dayLessonsRequester), onLessonClick
+                selectedDay, dayLessons, Modifier.bringIntoViewRequester(dayLessonsRequester), onOpenLessonPage
             )
         }
     }
@@ -207,7 +209,7 @@ private fun DayLessonsCard(
     day: Int,
     lessons: List<TimetableLesson>,
     modifier: Modifier = Modifier,
-    onLessonClick: (TimetableLesson) -> Unit = {}
+    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> }
 ) {
     val dayLabel = when (day) {
         Calendar.MONDAY -> "月"
@@ -226,10 +228,7 @@ private fun DayLessonsCard(
                 lessons.forEachIndexed { index, lesson ->
                     if (index > 0) HorizontalDivider()
                     Column(
-                        Modifier.fillMaxWidth().clickable(
-                            role = Role.Button,
-                            onClickLabel = "Moodleとシラバスを開く"
-                        ) { onLessonClick(lesson) }.padding(vertical = 8.dp),
+                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
@@ -240,11 +239,15 @@ private fun DayLessonsCard(
                             lesson.subject?.takeIf { it.isNotBlank() } ?: "教科未設定",
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Text(
-                            "Moodle・シラバスを開く",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { onOpenLessonPage(lesson, CoursePage.MOODLE) }) {
+                                Text("Moodle")
+                            }
+                            Text("|", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            TextButton(onClick = { onOpenLessonPage(lesson, CoursePage.SYLLABUS) }) {
+                                Text("シラバス")
+                            }
+                        }
                     }
                 }
             }
