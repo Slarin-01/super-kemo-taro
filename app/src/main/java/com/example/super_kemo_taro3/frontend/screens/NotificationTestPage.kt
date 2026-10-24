@@ -4,7 +4,13 @@
  */
 package com.example.super_kemo_taro3.frontend.screens
 
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
+import androidx.core.content.ContextCompat
 import com.example.super_kemo_taro3.app.appServices
 import com.example.super_kemo_taro3.frontend.viewmodel.NotificationTestViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
@@ -31,6 +38,9 @@ import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
 // 1. 通知テストの起動と操作の接続
 /** NotificationTestViewModelとNotificationTestScreenを接続する。起動時・再表示時に状態を更新し、必要時に通知アクセス設定を開く。 */
 class NotificationTestActivity : AppCompatActivity() {
+    private val notificationChanges = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = model.refresh()
+    }
     private val model by lazy {
         ViewModelProvider(this, ScreenViewModelFactory {
             NotificationTestViewModel(appServices.notifications)
@@ -49,11 +59,29 @@ class NotificationTestActivity : AppCompatActivity() {
                         // 戻り値のtrueは「許可の案内が必要」。ミュート状態そのものではない。
                         if (model.toggle()) PermissionSettingsNavigator.openNotificationAccess(this)
                     },
-                    onBack = ::finish
+                    onBack = ::finish,
+                    needsSystemSettings = model.needsSystemSettings,
+                    onSystemSettings = { PermissionSettingsNavigator.openNotificationModeSettings(this) }
                 )
             }
         }
         if (!model.hasAccess()) PermissionSettingsNavigator.openNotificationAccess(this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ContextCompat.registerReceiver(this, notificationChanges, IntentFilter().apply {
+            addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+            addAction(NotificationManager.ACTION_NOTIFICATION_POLICY_ACCESS_GRANTED_CHANGED)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                addAction(NotificationManager.ACTION_AUTOMATIC_ZEN_RULE_STATUS_CHANGED)
+            }
+        }, ContextCompat.RECEIVER_NOT_EXPORTED)
+    }
+
+    override fun onStop() {
+        unregisterReceiver(notificationChanges)
+        super.onStop()
     }
 
     override fun onResume() {
@@ -66,15 +94,26 @@ class NotificationTestActivity : AppCompatActivity() {
 // 2. 通知テストの表示
 /** タイトル、通知モード切替ボタン、status、戻るボタンを表示する。 */
 @Composable
-fun NotificationTestScreen(status: String, onToggle: () -> Unit, onBack: () -> Unit) {
+fun NotificationTestScreen(
+    status: String,
+    onToggle: () -> Unit,
+    onBack: () -> Unit,
+    needsSystemSettings: Boolean = false,
+    onSystemSettings: () -> Unit = {}
+) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("通知切り替えテスト", style = MaterialTheme.typography.headlineSmall)
+        Text("このアプリの通知モード（ON＝ミュート）")
         Button(onClick = onToggle) { Text("通知モード 切替") }
         Text(status, style = MaterialTheme.typography.bodyLarge)
+        if (needsSystemSettings) {
+            Text("本体設定や別のモードによるミュートが有効です。通知を戻すには、本体側の設定も解除してください。")
+            Button(onClick = onSystemSettings) { Text("本体の通知モード設定を開く") }
+        }
         Button(onClick = onBack) { Text("メニューに戻る") }
     }
 }
