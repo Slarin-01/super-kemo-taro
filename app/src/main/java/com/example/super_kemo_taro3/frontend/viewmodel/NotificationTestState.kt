@@ -15,14 +15,18 @@ import com.example.super_kemo_taro3.backend.service.NotificationModeService
 class NotificationTestViewModel(private val notifications: NotificationModeService) : ViewModel() {
     var status by mutableStateOf("通知モード：確認中")
         private set
+    var needsSystemSettings by mutableStateOf(false)
+        private set
 
     fun refresh() {
         // trueはミュート、falseは解除、nullは許可不足で状態を確認できないことを表す。
-        status = when (notifications.currentMuted()) {
+        val muted = notifications.currentMuted()
+        status = when (muted) {
             null -> "通知モード：権限が無いので確認できません"
             false -> "通知モード：OFF"
             true -> "通知モード：ON"
         }
+        needsSystemSettings = muted == false && notifications.currentDeviceMuted() == true
     }
 
     fun hasAccess(): Boolean = notifications.hasAccess()
@@ -30,10 +34,11 @@ class NotificationTestViewModel(private val notifications: NotificationModeServi
     /** 通知切り替えの結果を表示文へ変換し、許可画面を開く必要がある場合だけtrueを返す。 */
     fun toggle(): Boolean {
         val muted = notifications.toggle()
-        status = when (muted) {
-            null -> "おやすみモードへのアクセスが許可されていません。設定画面で許可してください。"
-            true -> "通知モード: ON"
-            false -> "通知モード: OFF"
+        if (muted == null) {
+            status = "おやすみモードへのアクセスが許可されていません。設定画面で許可してください。"
+            needsSystemSettings = false
+        } else {
+            refresh()
         }
         return muted == null
     }

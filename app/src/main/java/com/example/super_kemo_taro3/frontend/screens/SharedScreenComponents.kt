@@ -165,6 +165,14 @@ object AppThemeController {
 // 5. 権限を許可する端末設定画面への案内
 /** Activityを受け取り、通知ポリシーアクセス・正確なアラームのAndroid設定画面を開く。 */
 object PermissionSettingsNavigator {
+    fun openNotificationModeSettings(activity: Activity) {
+        try {
+            activity.startActivity(Intent("android.settings.ZEN_MODE_SETTINGS"))
+        } catch (_: android.content.ActivityNotFoundException) {
+            activity.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS))
+        }
+    }
+
     fun openNotificationAccess(activity: Activity) {
         activity.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
     }
