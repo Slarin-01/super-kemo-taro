@@ -104,7 +104,9 @@ class MoodleImportViewModel(
                         message = "履修科目を取り込んでいます。（$done/$total）"
                     }
                 }
-                Outcome(resultText(result), timetable.replaceSelectedSlots(result.slots), false)
+                Outcome(resultText(result), timetable.replaceSelectedSlots(
+                    result.slots, result.subjects, result.courseLinks
+                ), false)
             } catch (error: ImportFailed) {
                 Outcome(error.message ?: "取り込みできません", false, error.unauthorized)
             } catch (_: IOException) {

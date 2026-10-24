@@ -4,6 +4,7 @@
  */
 package com.example.super_kemo_taro3.backend.service
 
+import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import java.net.URLDecoder
 import java.security.MessageDigest
 import java.text.Normalizer
@@ -64,8 +65,12 @@ object MoodleImport {
 
     // 2. 履修科目の講義番号
     /** 終了済みを除き、idnumberまたは科目名の英数字10桁を講義番号にする。 */
-    fun lectureCodes(json: String, nowEpoch: Long): List<String> {
-        val codes = mutableListOf<String>()
+    fun lectureCodes(json: String, nowEpoch: Long): List<String> =
+        enrolledCourses(json, nowEpoch).map { it.code }.distinct()
+
+    /** 講義番号とMoodleのコースIDを結び付け、ブラウザ用リンクにも利用する。 */
+    fun enrolledCourses(json: String, nowEpoch: Long): List<EnrolledCourse> {
+        val courses = mutableListOf<EnrolledCourse>()
         val codePattern = Regex(lectureCode)
         val bracketed = Regex("\\[($lectureCode)]")
         for (course in jsonObjects(json)) {
@@ -78,9 +83,13 @@ object MoodleImport {
             } else {
                 bracketed.find(fields["fullname"] ?: "")?.groupValues?.get(1)
             }
-            if (code != null) codes += code
+            if (code != null) courses += EnrolledCourse(
+                code = code,
+                moodleId = fields["id"]?.toLongOrNull()?.takeIf { it > 0 },
+                subject = plain(fields["fullname"].orEmpty()).removePrefix("[$code]").trim()
+            )
         }
-        return codes.distinct()
+        return courses.distinct()
     }
 
     fun userId(json: String): String {
@@ -271,19 +280,41 @@ object MoodleImport {
     ): ImportResult {
         val site = moodle(token, "core_webservice_get_site_info", emptyMap(), pages)
         val courses = moodle(token, "core_enrol_get_users_courses", mapOf("userid" to userId(site)), pages)
-        val codes = lectureCodes(courses, nowEpoch)
+        val enrolments = enrolledCourses(courses, nowEpoch)
+        val codes = enrolments.map { it.code }.distinct()
         if (codes.isEmpty()) throw ImportFailed("履修中の科目を読み取れません")
         onProgress(0, codes.size)
         val calendars = parseCalendar(pages.load(CALENDAR_URL, null))
         val keys = mutableSetOf<String>()
+        val subjects = mutableMapOf<String, MutableSet<String>>()
+        val links = mutableMapOf<String, MutableSet<CourseLinks>>()
         var unmatched = 0
         for ((index, code) in codes.withIndex()) {
             val course = lookupLecture(code, pages)
             val slots = if (course != null && courseActive(course, calendars, today)) muteKeys(course) else emptySet()
-            if (slots.isEmpty()) unmatched += 1 else keys += slots
+            if (slots.isEmpty()) {
+                unmatched += 1
+            } else {
+                keys += slots
+                course?.subject?.takeIf { it.isNotBlank() }?.let { subject ->
+                    slots.forEach { slot -> subjects.getOrPut(slot) { linkedSetOf() }.add(subject) }
+                }
+                val courseLinks = enrolments.filter { it.code == code }.map { enrolment ->
+                    CourseLinks(
+                        subject = course?.subject?.takeIf { it.isNotBlank() }
+                            ?: enrolment.subject.ifBlank { code },
+                        moodleUrl = CourseLinkRules.moodleUrl(enrolment.moodleId),
+                        syllabusUrl = course?.syllabusUrl
+                    )
+                }.filter { it.moodleUrl != null || it.syllabusUrl != null }
+                slots.forEach { slot -> links.getOrPut(slot) { linkedSetOf() }.addAll(courseLinks) }
+            }
             onProgress(index + 1, codes.size)
         }
-        return ImportResult(keys, unmatched)
+        return ImportResult(
+            keys, unmatched, subjects.mapValues { it.value.joinToString(" / ") },
+            links.mapValues { it.value.toList() }
+        )
     }
 
     private fun moodle(token: String, function: String, extra: Map<String, String>, pages: PageFetch): String {
@@ -299,7 +330,13 @@ object MoodleImport {
         val href = row.getOrNull(2)?.second ?: return null
         val code = Regex("(?:^|[?&])lct_cd=($lectureCode)(?:&|$)").find(href)?.groupValues?.get(1) ?: return null
         val term = row.getOrNull(6)?.first?.let { plain(it) }?.ifBlank { null }
-        return SyllabusCourse(code = code, term = term, slotText = plain(row.getOrNull(7)?.first ?: ""))
+        return SyllabusCourse(
+            code = code,
+            term = term,
+            slotText = plain(row.getOrNull(7)?.first ?: ""),
+            subject = plain(row.getOrNull(4)?.first ?: ""),
+            syllabusUrl = CourseLinkRules.syllabusUrl(href)
+        )
     }
 
     private fun plain(value: String): String =
@@ -311,12 +348,20 @@ object MoodleImport {
 
 data class ReturnedToken(val siteId: String, val token: String)
 data class DateSpan(val start: String, val end: String)
+data class EnrolledCourse(val code: String, val moodleId: Long?, val subject: String)
 data class SyllabusCourse(
     val code: String,
     val term: String?,
-    val slotText: String
+    val slotText: String,
+    val subject: String = "",
+    val syllabusUrl: String? = null
 )
-data class ImportResult(val slots: Set<String>, val unmatched: Int)
+data class ImportResult(
+    val slots: Set<String>,
+    val unmatched: Int,
+    val subjects: Map<String, String> = emptyMap(),
+    val courseLinks: Map<String, List<CourseLinks>> = emptyMap()
+)
 class ImportFailed(message: String, val unauthorized: Boolean = false) : Exception(message)
 
 fun interface PageFetch {
