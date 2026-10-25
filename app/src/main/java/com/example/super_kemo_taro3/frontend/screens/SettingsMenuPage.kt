@@ -27,9 +27,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +63,7 @@ fun MenuScreen(
     onMoodle: () -> Unit,
     onTimetable: () -> Unit,
     onTimeSettings: () -> Unit,
+    onNotificationSettings: () -> Unit,
     onNotificationTest: () -> Unit,
     onThemeSettings: () -> Unit,
     paused: Boolean,
@@ -89,8 +92,9 @@ fun MenuScreen(
             SettingsMenuEntry("履修を取り込む", "Moodleから履修情報を取り込みます", R.drawable.ic_menu_import, onMoodle),
             SettingsMenuEntry("時刻設定", "通知を抑える曜日と時限を選びます", R.drawable.ic_menu_timetable, onTimetable),
             SettingsMenuEntry("時限カスタム", "各時限の開始・終了時刻を変更します", R.drawable.ic_menu_clock, onTimeSettings),
+            SettingsMenuEntry("通知設定", "授業終了後の通知ミュートの扱いを選びます", R.drawable.ic_menu_notifications, onNotificationSettings),
             SettingsMenuEntry("通知切り替えテスト", "通知のミュート・解除を確認します", R.drawable.ic_menu_notifications, onNotificationTest),
-            SettingsMenuEntry("クレジット", "アプリの情報・制作メンバーを表示します", R.drawable.ic_menu_info, onOpenCredits)
+            SettingsMenuEntry("クレジット", "アプリの情報・制作メンバー・ライセンスを表示します", R.drawable.ic_menu_info, onOpenCredits)
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             entries.forEachIndexed { index, entry ->
@@ -103,8 +107,15 @@ fun MenuScreen(
         }
     }
     if (showCredits) {
+        val resources = LocalContext.current.resources
+        val apacheLicense = remember(resources) {
+            resources.openRawResource(R.raw.apache_license_2_0)
+                .bufferedReader(Charsets.UTF_8).use { it.readText() }.trim()
+        }
         ConfirmationDialog(
-            title = "クレジット", message = creditMessage, confirmText = "閉じる",
+            title = "クレジット",
+            message = "$creditMessage\n\n■ Apache License 2.0（原文）\n\n$apacheLicense",
+            confirmText = "閉じる",
             onConfirm = onCloseCredits, onDismiss = onCloseCredits, showCancel = false
         )
     }
@@ -187,6 +198,7 @@ private fun MenuScreenPreview() {
                 onMoodle = {},
                 onTimetable = {},
                 onTimeSettings = {},
+                onNotificationSettings = {},
                 onNotificationTest = {},
                 onThemeSettings = {},
                 paused = false,

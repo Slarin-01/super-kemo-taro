@@ -16,38 +16,53 @@ class MenuViewModel(restoredShowCredits: Boolean = false) : ViewModel() {
     var showCredits by mutableStateOf(restoredShowCredits)
         private set
 
-    fun openCredits() { showCredits = true }
-    fun closeCredits() { showCredits = false }
+    fun openCredits() {
+        showCredits = true
+    }
 
-    // クレジットは固定の表示文。ツールや対応OSを変えた場合は、本文も実態に合わせて更新する。
+    fun closeCredits() {
+        showCredits = false
+    }
+
+    // クレジットは固定の表示文。対応OSや使用ライブラリを変えた場合は、本文も更新する。
     val creditMessage = """
             ■ アプリ名
             言十ベル
             
             ■ バージョン
-            1.0
+            1.1
             
-            ■ グループ名
+            ■ 作成グループ名
             スーパーKEMOたろう
             
             ■ メンバー(敬称略)
+            кемо
             スラリン
             ペパチキ
             くぬたろう
             
-            ■ 使用ツール・環境
-            Android Studio
-            Android SDK
-            Kotlin
-            
-            ■ 主な使用API
-            NotificationManager（おやすみモード制御）
-            AlarmManager（スケジュール管理）
-            SharedPreferences（データ保存）
-            BroadcastReceiver（アラーム受信・再起動対応）
+            ■ テスト環境
+            Samsung Galaxy A53 SC-53C 
             
             ■ 対応OS
             Android 7.0 以上
+
+            ■ オープンソースライセンス
+            本アプリは、以下のオープンソースライブラリを使用しています。
+
+            AndroidX / Jetpack Compose
+            Activity / Activity Compose / AppCompat / Core KTX
+            Compose UI / Material 3 / UI Tooling
+            Copyright The Android Open Source Project
+            https://github.com/androidx/androidx
+
+            Material Components for Android
+            Copyright The Android Open Source Project
+            https://github.com/material-components/material-components-android
+
+            上記のライブラリは Apache License, Version 2.0 の条件で提供されています。
+            https://www.apache.org/licenses/LICENSE-2.0
+            ライセンス全文を以下に記載します。
         """.trimIndent()
 }
 

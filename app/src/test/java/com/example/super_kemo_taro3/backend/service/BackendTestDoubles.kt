@@ -4,6 +4,7 @@ import com.example.super_kemo_taro3.backend.service.LessonTime
 import com.example.super_kemo_taro3.backend.repository.MoodleLogin
 import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
+import com.example.super_kemo_taro3.backend.repository.LessonEndNotificationMode
 
 /** MemorySettingsRepository、RecordingAlarmScheduler、RecordingNotificationGatewayが設定保存と端末操作の依頼をメモリー上で記録する。 */
 class MemorySettingsRepository : SettingsRepository {
@@ -12,6 +13,8 @@ class MemorySettingsRepository : SettingsRepository {
     var subjects: Map<String, String> = emptyMap()
     var courseLinks: Map<String, List<CourseLinks>> = emptyMap()
     var pauseUntil = 0L
+    var automaticMutingEnabled = true
+    var lessonEndMode = LessonEndNotificationMode.KEEP_MUTED
     val times = mutableMapOf<String, String>()
     var darkMode: Boolean? = null
     var themeColor: Int? = null
@@ -32,6 +35,10 @@ class MemorySettingsRepository : SettingsRepository {
     override fun writeMoodleLogin(login: MoodleLogin?) { moodleLogin = login }
     override fun readPauseUntil() = pauseUntil
     override fun writePauseUntil(deadline: Long?) { pauseUntil = deadline ?: 0L }
+    override fun readAutomaticMutingEnabled() = automaticMutingEnabled
+    override fun writeAutomaticMutingEnabled(enabled: Boolean) { automaticMutingEnabled = enabled }
+    override fun readLessonEndNotificationMode() = lessonEndMode
+    override fun writeLessonEndNotificationMode(mode: LessonEndNotificationMode) { lessonEndMode = mode }
     override fun readTime(key: String) = times[key]
     override fun writeTimes(times: Map<String, String>) { this.times.putAll(times) }
     override fun readDarkMode() = darkMode
@@ -69,11 +76,18 @@ class RecordingNotificationGateway : NotificationGateway {
     var allowed = true
     var currentMuted = false
     val changes = mutableListOf<Boolean>()
+    val soundChanges = mutableListOf<Boolean>()
+    val operations = mutableListOf<String>()
     override fun hasPolicyAccess() = allowed
     override fun isMuted() = currentMuted
     override fun setMuted(muted: Boolean) {
         this.currentMuted = muted
         changes += muted
+        operations += "dnd:$muted"
+    }
+    override fun setNotificationSoundsMuted(muted: Boolean) {
+        soundChanges += muted
+        operations += "sounds:$muted"
     }
 }
 

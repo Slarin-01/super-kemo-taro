@@ -76,6 +76,7 @@ class NotificationTestViewModelTest {
         override fun hasPolicyAccess() = allowed
         override fun isMuted() = appMuted
         override fun isDeviceMuted() = systemMuted || appMuted
+        override fun setNotificationSoundsMuted(muted: Boolean) = Unit
         override fun setMuted(muted: Boolean) {
             if (!ignoreChanges) appMuted = muted
         }

@@ -16,7 +16,7 @@ class BackendWorkflowTest {
     // 時計を固定し、実行時刻に左右されず停止中・期限切れを検証する。
     private var now = 1000L
     private val pause = PauseService(settings, notifications) { now }
-    private val delivery = AlarmDeliveryService(notifications, pause, alarms)
+    private val delivery = AlarmDeliveryService(notifications, pause, alarms, settings)
 
     // 選択・解除と、時刻保存前後の予約内容を確認する。
     @Test fun selectionPersistsAndRegistersFridayAlarm() {

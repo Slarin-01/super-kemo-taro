@@ -6,9 +6,11 @@ package com.example.super_kemo_taro3.backend.service
 
 import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioManager
 import android.os.Build
 import android.service.notification.Condition
 import androidx.annotation.RequiresApi
+import com.example.super_kemo_taro3.backend.repository.LessonEndNotificationMode
 
 // 1. 通知状態を取得・変更する契約
 /** 通知ポリシーアクセスの可否、ミュート状態の取得、ミュート状態の変更を定義する。表示文字列や画面遷移は含めない。 */
@@ -16,6 +18,7 @@ interface NotificationGateway {
     fun hasPolicyAccess(): Boolean
     fun isMuted(): Boolean
     fun setMuted(muted: Boolean)
+    fun setNotificationSoundsMuted(muted: Boolean)
     fun isDeviceMuted(): Boolean = isMuted()
     fun setMutedByUser(muted: Boolean) = setMuted(muted)
 }
@@ -25,6 +28,8 @@ interface NotificationGateway {
 class AndroidNotificationGateway(context: Context) : NotificationGateway {
     private val notifications = context.applicationContext
         .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val audio = context.applicationContext
+        .getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     override fun hasPolicyAccess(): Boolean = notifications.isNotificationPolicyAccessGranted
 
@@ -60,6 +65,10 @@ class AndroidNotificationGateway(context: Context) : NotificationGateway {
         }
     }
 
+    override fun setNotificationSoundsMuted(muted: Boolean) {
+        audio.ringerMode = if (muted) AudioManager.RINGER_MODE_SILENT else AudioManager.RINGER_MODE_NORMAL
+    }
+
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun appRule() = notifications.automaticZenRules.entries.firstOrNull { (_, rule) ->
         // setInterruptionFilterが作る自アプリの暗黙ルール。内部のルールIDには依存しない。
@@ -81,6 +90,14 @@ class NotificationModeService(private val gateway: NotificationGateway) {
     fun setMuted(muted: Boolean): Boolean {
         if (!hasAccess()) return false
         gateway.setMuted(muted)
+        return true
+    }
+
+    /** 音の設定を先に変え、その操作がおやすみモードに影響する端末でも最後にアプリのルールを解除する。 */
+    fun finishLesson(mode: LessonEndNotificationMode): Boolean {
+        if (!hasAccess()) return false
+        gateway.setNotificationSoundsMuted(mode == LessonEndNotificationMode.KEEP_MUTED)
+        gateway.setMuted(false)
         return true
     }
 
