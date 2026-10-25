@@ -1,6 +1,7 @@
 package com.example.super_kemo_taro3
 
 import android.app.NotificationManager
+import android.media.AudioManager
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.service.notification.Condition
@@ -9,6 +10,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.super_kemo_taro3.backend.service.AndroidNotificationGateway
 import com.example.super_kemo_taro3.backend.service.NotificationModeService
+import com.example.super_kemo_taro3.backend.repository.LessonEndNotificationMode
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,6 +22,7 @@ class NotificationControlDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val manager = context.getSystemService(NotificationManager::class.java)
+    private val audio = context.getSystemService(AudioManager::class.java)
     private val gateway = AndroidNotificationGateway(context)
     private val service = NotificationModeService(gateway)
 
@@ -67,6 +70,37 @@ class NotificationControlDeviceTest {
             assertEquals(false, service.toggle())
             awaitState { !appRuleIsActive() }
         } finally {
+            gateway.setMutedByUser(originalAppMuted)
+        }
+    }
+
+    @Test fun lessonEndSeparatesSilentModeFromDndAndCanReturnToNormal() {
+        assertTrue(manager.isNotificationPolicyAccessGranted)
+        val originalRingerMode = audio.ringerMode
+        val originalFilter = manager.currentInterruptionFilter
+        val originalAppMuted = appRuleIsActive()
+        try {
+            for (initialMode in listOf(AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_VIBRATE)) {
+                audio.ringerMode = initialMode
+                gateway.setMutedByUser(true)
+                awaitState { appRuleIsActive() }
+
+                assertTrue(service.finishLesson(LessonEndNotificationMode.KEEP_MUTED))
+                awaitState { !appRuleIsActive() && audio.ringerMode == AudioManager.RINGER_MODE_SILENT }
+                if (originalFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
+                    awaitState { manager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL }
+                }
+
+                gateway.setMutedByUser(true)
+                awaitState { appRuleIsActive() }
+                assertTrue(service.finishLesson(LessonEndNotificationMode.UNMUTE_ALL))
+                awaitState { !appRuleIsActive() && audio.ringerMode == AudioManager.RINGER_MODE_NORMAL }
+                if (originalFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
+                    awaitState { manager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL }
+                }
+            }
+        } finally {
+            audio.ringerMode = originalRingerMode
             gateway.setMutedByUser(originalAppMuted)
         }
     }

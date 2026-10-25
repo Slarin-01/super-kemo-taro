@@ -32,7 +32,8 @@ class PauseService(
 class AlarmDeliveryService(
     private val notifications: NotificationModeService,
     private val pause: PauseService,
-    private val alarms: AlarmScheduler
+    private val alarms: AlarmScheduler,
+    private val settings: SettingsRepository
 ) {
     fun handle(action: String?, requestCode: Int, scheduledTime: Long) {
         val mute = when (action) {
@@ -42,8 +43,11 @@ class AlarmDeliveryService(
         }
         // 通知の許可がない場合は、この受信を終了する。翌週の再予約も行わない現在の仕様。
         if (!notifications.hasAccess()) return
-        // 一時停止中は通知の変更を抑止するが、翌週の予定は継続する。
-        if (!pause.isPaused()) notifications.setMuted(mute)
+        // 自動ミュートがオフ、または一時停止中でも、再開後に動作するよう翌週の予定は継続する。
+        if (settings.readAutomaticMutingEnabled() && !pause.isPaused()) {
+            if (mute) notifications.setMuted(true)
+            else notifications.finishLesson(settings.readLessonEndNotificationMode())
+        }
         // 予約の許可だけがない場合、今回の通知変更は行い、翌週の登録を見送る。
         if (alarms.canScheduleExactAlarms()) {
             alarms.scheduleNext(requireNotNull(action), requestCode, scheduledTime)

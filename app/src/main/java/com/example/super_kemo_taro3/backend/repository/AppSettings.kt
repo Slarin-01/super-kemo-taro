@@ -17,6 +17,12 @@ data class MoodleLogin(val siteId: String, val expiresAt: Long)
 /** 同じ時限に複数科目がある場合も、科目名と2つのリンクの組を保持する。 */
 data class CourseLinks(val subject: String, val moodleUrl: String? = null, val syllabusUrl: String? = null)
 
+/** 授業終了時のおやすみモード解除後に、端末をサイレントにするか通常モードに戻すか。 */
+enum class LessonEndNotificationMode {
+    KEEP_MUTED,
+    UNMUTE_ALL
+}
+
 /** 画面の状態管理とサービスが共用する設定の窓口。保存先の名前やキーは実装側で管理する。 */
 interface SettingsRepository {
     fun readBlockedSlots(): Set<String>
@@ -32,6 +38,10 @@ interface SettingsRepository {
     fun readPauseUntil(): Long
     /** 日曜日末の停止期限を保存する。nullを渡すと一時停止を解除する。 */
     fun writePauseUntil(deadline: Long?)
+    fun readAutomaticMutingEnabled(): Boolean
+    fun writeAutomaticMutingEnabled(enabled: Boolean)
+    fun readLessonEndNotificationMode(): LessonEndNotificationMode
+    fun writeLessonEndNotificationMode(mode: LessonEndNotificationMode)
     fun readTime(key: String): String?
     fun writeTimes(times: Map<String, String>)
     /** 未設定はnullを返し、端末の表示モードを引き継げるようにする。 */
@@ -140,6 +150,24 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
             if (deadline == null) remove("pause_until_sunday_time")
             else putLong("pause_until_sunday_time", deadline)
         }.apply()
+    }
+
+    // 既存利用者は、設定を変更するまでこれまでどおり自動ミュートを利用する。
+    override fun readAutomaticMutingEnabled(): Boolean =
+        timetable.getBoolean("automatic_muting_enabled", true)
+
+    override fun writeAutomaticMutingEnabled(enabled: Boolean) {
+        timetable.edit().putBoolean("automatic_muting_enabled", enabled).apply()
+    }
+
+    override fun readLessonEndNotificationMode(): LessonEndNotificationMode {
+        val saved = timetable.getString("lesson_end_notification_mode", null)
+        return LessonEndNotificationMode.entries.firstOrNull { it.name == saved }
+            ?: LessonEndNotificationMode.KEEP_MUTED
+    }
+
+    override fun writeLessonEndNotificationMode(mode: LessonEndNotificationMode) {
+        timetable.edit().putString("lesson_end_notification_mode", mode.name).apply()
     }
 
     override fun readTime(key: String): String? = times.getString(key, null)

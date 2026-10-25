@@ -41,7 +41,7 @@ class AppServices(context: Context) {
     val pause = PauseService(settings, notifications)
     val timetable = TimetableService(settings, alarms)
     val lessonTimes = LessonTimeService(settings, timetable)
-    val alarmDelivery = AlarmDeliveryService(notifications, pause, alarms)
+    val alarmDelivery = AlarmDeliveryService(notifications, pause, alarms, settings)
 }
 
 /** ActivityやReceiverのContextから共通処理を取得する。ManifestにBellApplicationが登録されていることが前提。 */
