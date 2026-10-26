@@ -89,8 +89,10 @@ class MoodleImportTest {
 
         assertEquals("MON_1", timetable.readNextLesson(now)?.slot?.key)
         assertEquals("情報処理", timetable.readNextLesson(now)?.subject)
+        assertEquals("一般教育棟A21教室", timetable.readNextLesson(now)?.courseLinks?.single()?.classroom)
         val links = timetable.readLessonsForDay(java.util.Calendar.MONDAY).single().courseLinks.single()
         assertEquals("情報処理", links.subject)
+        assertEquals("一般教育棟A21教室", links.classroom)
         assertEquals("${MoodleImport.ORIGIN}/course/view.php?id=101", links.moodleUrl)
         assertEquals(
             "https://kyomu.adm.okayama-u.ac.jp/Portal/Public/Syllabus/DetailMain.aspx?lct_year=2026&lct_cd=2026010001&je_cd=1",
@@ -110,9 +112,48 @@ class MoodleImportTest {
         assertEquals("基礎実験", result.subjects["MON_2"])
         val links = result.courseLinks.getValue("MON_1")
         assertEquals(listOf("情報処理", "基礎実験"), links.map { it.subject })
+        assertEquals(listOf("一般教育棟A21教室", "教育5206講義室"), links.map { it.classroom })
         assertEquals(listOf(101L, 409L).map(CourseLinkRules::moodleUrl), links.map { it.moodleUrl })
         assertTrue(links[0].syllabusUrl.orEmpty().contains("lct_cd=2026010001"))
         assertTrue(links[1].syllabusUrl.orEmpty().contains("lct_cd=202602B409"))
+    }
+
+    @Test fun classroomComesFromItsOwnFieldAndPreservesMultipleRooms() {
+        val page = """
+            <span id="ctl00_phContents_sylSummary_lblClassroom_lbl_lbl">教室</span>
+            <span id="ctl00_phContents_sylSummary_txtClassroom_lbl">一般教育棟Ａ２１教室<br />
+            <span>教育５２０６講義室</span> &amp; 実習室<br /></span>
+            <span>教員研究室</span>
+        """.trimIndent()
+        assertEquals("一般教育棟A21教室 / 教育5206講義室 & 実習室", MoodleImport.parseClassroom(page))
+        assertNull(MoodleImport.parseClassroom("<span>教室：研究室</span>"))
+        assertNull(MoodleImport.parseClassroom(
+            """<span id="ctl00_phContents_sylSummary_txtClassroom_lbl">&nbsp; <br /></span>"""
+        ))
+    }
+
+    @Test fun blankClassroomsKeepTheCourseAndOnlyActiveCoursesLoadDetails() {
+        val pages = FixturePages(classrooms = emptyMap())
+
+        val result = MoodleImport.collect("token", today, nowEpoch, pages)
+
+        assertTrue(result.courseLinks.values.flatten().all { it.classroom == null })
+        assertEquals(setOf("THU_5", "THU_6", "MON_1", "TUE_1", "FRI_8"), result.slots)
+        val details = pages.loads.filter { it.contains("/DetailMain.aspx?") }
+        assertEquals(3, details.size)
+        assertTrue(details.none { it.contains("lct_cd=2026010002") || it.contains("lct_cd=2026010003") })
+    }
+
+    @Test fun unavailableDetailsDoNotPreventTimetableImport() {
+        for (failure in listOf(java.io.IOException("offline"), ImportFailed("取得できません"))) {
+            val result = MoodleImport.collect("token", today, nowEpoch, FixturePages(detailFailure = failure))
+
+            assertEquals(setOf("THU_5", "THU_6", "MON_1", "TUE_1", "FRI_8"), result.slots)
+            assertEquals("情報処理", result.subjects["MON_1"])
+            assertNull(result.courseLinks.getValue("MON_1").single().classroom)
+            assertEquals("${MoodleImport.ORIGIN}/course/view.php?id=101",
+                result.courseLinks.getValue("MON_1").single().moodleUrl)
+        }
     }
 
     @Test fun rejectsUnlistedHostsBeforeConnecting() {
@@ -138,7 +179,11 @@ private class FixturePages(
           {"idnumber":"2026010005","fullname":"夜間","enddate":0},
           {"idnumber":"2025092030","fullname":"終了","enddate":1}
         ]
-    """.trimIndent()
+    """.trimIndent(),
+    private val classrooms: Map<String, String> = mapOf(
+        "2026010001" to "一般教育棟Ａ２１教室", "202602B409" to "教育5206講義室"
+    ),
+    private val detailFailure: Exception? = null
 ) : PageFetch {
     val loads = mutableListOf<String>()
     val posts = mutableListOf<Map<String, String>>()
@@ -154,6 +199,11 @@ private class FixturePages(
             form?.get("wsfunction") == "core_webservice_get_site_info" -> """{"userid":7}"""
             form?.get("wsfunction") == "core_enrol_get_users_courses" -> courses
             url == MoodleImport.CALENDAR_URL -> calendar
+            url.contains("/DetailMain.aspx?") -> {
+                detailFailure?.let { throw it }
+                val code = Regex("[?&]lct_cd=([^&]+)").find(url)?.groupValues?.get(1)
+                """<span id="ctl00_phContents_sylSummary_txtClassroom_lbl">${classrooms[code].orEmpty()}</span>"""
+            }
             form == null -> formPage
             else -> syllabus(form.getValue(codeField))
         }

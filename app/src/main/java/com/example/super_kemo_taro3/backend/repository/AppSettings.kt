@@ -14,8 +14,13 @@ private const val SLOT_LINKS_PREFIX = "slot_links_"
 // 1. 呼び出し側が利用する設定保存の契約
 data class MoodleLogin(val siteId: String, val expiresAt: Long)
 
-/** 同じ時限に複数科目がある場合も、科目名と2つのリンクの組を保持する。 */
-data class CourseLinks(val subject: String, val moodleUrl: String? = null, val syllabusUrl: String? = null)
+/** 同じ時限に複数科目がある場合も、科目名・教室・リンクの組を保持する。 */
+data class CourseLinks(
+    val subject: String,
+    val moodleUrl: String? = null,
+    val syllabusUrl: String? = null,
+    val classroom: String? = null
+)
 
 /** 授業終了時のおやすみモード解除後に、端末をサイレントにするか通常モードに戻すか。 */
 enum class LessonEndNotificationMode {
@@ -93,7 +98,8 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
                     CourseLinks(
                         subject = item.optString("subject"),
                         moodleUrl = item.optString("moodle").takeIf { it.isNotBlank() },
-                        syllabusUrl = item.optString("syllabus").takeIf { it.isNotBlank() }
+                        syllabusUrl = item.optString("syllabus").takeIf { it.isNotBlank() },
+                        classroom = item.optString("classroom").takeIf { it.isNotBlank() }
                     )
                 }
             }.getOrDefault(emptyList())
@@ -110,6 +116,7 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
                         put("subject", course.subject)
                         put("moodle", course.moodleUrl)
                         put("syllabus", course.syllabusUrl)
+                        put("classroom", course.classroom)
                     })
                 }
                 putString("$SLOT_LINKS_PREFIX$slot", array.toString())

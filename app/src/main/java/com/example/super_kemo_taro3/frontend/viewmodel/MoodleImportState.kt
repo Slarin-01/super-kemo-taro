@@ -28,7 +28,7 @@ class MoodleImportViewModel(
 ) : ViewModel() {
     var phase by mutableStateOf(Phase.Confirm)
         private set
-    var message by mutableStateOf(confirmMessage)
+    var message by mutableStateOf(CONFIRM_MESSAGE)
         private set
     var progress by mutableStateOf<Float?>(null)
         private set
@@ -75,7 +75,7 @@ class MoodleImportViewModel(
         acceptedUrl = null
         progress = null
         phase = Phase.Confirm
-        message = confirmMessage
+        message = CONFIRM_MESSAGE
     }
 
     fun consumeAlarmSettings(): Boolean {
@@ -104,13 +104,25 @@ class MoodleImportViewModel(
                         message = "履修科目を取り込んでいます。（$done/$total）"
                     }
                 }
-                Outcome(resultText(result), timetable.replaceSelectedSlots(
-                    result.slots, result.subjects, result.courseLinks
-                ), false)
+                Outcome(
+                    text = resultText(result),
+                    needsPermission = timetable.replaceSelectedSlots(
+                        result.slots, result.subjects, result.courseLinks
+                    ),
+                    unauthorized = false
+                )
             } catch (error: ImportFailed) {
-                Outcome(error.message ?: "取り込みできません", false, error.unauthorized)
+                Outcome(
+                    text = error.message ?: "取り込みできません",
+                    needsPermission = false,
+                    unauthorized = error.unauthorized
+                )
             } catch (_: IOException) {
-                Outcome("大学の公開情報を取得できません", false, false)
+                Outcome(
+                    text = "大学の公開情報を取得できません",
+                    needsPermission = false,
+                    unauthorized = false
+                )
             }
             main.post {
                 if (outcome.unauthorized) settings.writeMoodleToken(null)
@@ -134,6 +146,6 @@ class MoodleImportViewModel(
     enum class Phase { Confirm, Waiting, Importing, Done }
 
     private companion object {
-        const val confirmMessage = "岡大Moodleの履修科目で、ミュートする枠を置き換えます。今の選択は残しません。"
+        const val CONFIRM_MESSAGE = "岡大Moodleの履修科目で、ミュートする枠を置き換えます。今の選択は残しません。"
     }
 }

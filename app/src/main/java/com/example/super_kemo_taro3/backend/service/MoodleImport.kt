@@ -5,6 +5,7 @@
 package com.example.super_kemo_taro3.backend.service
 
 import com.example.super_kemo_taro3.backend.repository.CourseLinks
+import java.io.IOException
 import java.net.URLDecoder
 import java.security.MessageDigest
 import java.text.Normalizer
@@ -188,6 +189,47 @@ object MoodleImport {
         return parseSyllabus(pages.load(SEARCH_URL, form)).firstOrNull { it.code == code }
     }
 
+    /** 検索結果にはない教室を、シラバス詳細の専用欄から読む。空欄は未登録とする。 */
+    fun parseClassroom(page: String): String? {
+        val text = StringBuilder()
+        val rooms = mutableListOf<String>()
+        var spanDepth = 0
+        fun finishRoom() {
+            plain(text.toString()).replace(Regex("\\s+"), " ").takeIf { it.isNotBlank() }?.let { rooms += it }
+            text.clear()
+        }
+        for (token in tokens(page)) {
+            when (token) {
+                is Markup.Tag -> {
+                    if (spanDepth == 0 && !token.close && token.name == "span" &&
+                        token.attrs["id"] == "ctl00_phContents_sylSummary_txtClassroom_lbl") {
+                        spanDepth = 1
+                    } else if (spanDepth > 0 && token.name == "span") {
+                        spanDepth += if (token.close) -1 else 1
+                        if (spanDepth == 0) break
+                    } else if (spanDepth > 0 && token.name == "br") {
+                        finishRoom()
+                    }
+                }
+                is Markup.Text -> if (spanDepth > 0) text.append(token.value)
+            }
+        }
+        finishRoom()
+        return rooms.joinToString(" / ").takeIf { it.isNotBlank() }
+    }
+
+    private fun readClassroom(course: SyllabusCourse?, pages: PageFetch): String? {
+        val url = course?.syllabusUrl ?: return null
+        // 教室の取得失敗で、取得済みの授業やミュート枠の取り込みを止めない。
+        return try {
+            parseClassroom(pages.load(url, null))
+        } catch (_: IOException) {
+            null
+        } catch (_: ImportFailed) {
+            null
+        }
+    }
+
     fun parseCalendar(page: String): Map<String, Map<String, DateSpan>> {
         val section = Regex("<h2\\b[^>]*>\\s*学期\\s*</h2>(.*?)(?=<h2\\b|$)", RegexOption.DOT_MATCHES_ALL)
             .find(page) ?: throw ImportFailed("学期の学年暦がありません")
@@ -299,12 +341,14 @@ object MoodleImport {
                 course?.subject?.takeIf { it.isNotBlank() }?.let { subject ->
                     slots.forEach { slot -> subjects.getOrPut(slot) { linkedSetOf() }.add(subject) }
                 }
+                val classroom = readClassroom(course, pages)
                 val courseLinks = enrolments.filter { it.code == code }.map { enrolment ->
                     CourseLinks(
                         subject = course?.subject?.takeIf { it.isNotBlank() }
                             ?: enrolment.subject.ifBlank { code },
                         moodleUrl = CourseLinkRules.moodleUrl(enrolment.moodleId),
-                        syllabusUrl = course?.syllabusUrl
+                        syllabusUrl = course?.syllabusUrl,
+                        classroom = classroom
                     )
                 }.filter { it.moodleUrl != null || it.syllabusUrl != null }
                 slots.forEach { slot -> links.getOrPut(slot) { linkedSetOf() }.addAll(courseLinks) }

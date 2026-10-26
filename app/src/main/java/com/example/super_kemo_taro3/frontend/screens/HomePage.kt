@@ -42,6 +42,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.super_kemo_taro3.app.appServices
+import com.example.super_kemo_taro3.backend.repository.CourseLinks
 import com.example.super_kemo_taro3.backend.service.LessonTime
 import com.example.super_kemo_taro3.backend.service.CoursePage
 import com.example.super_kemo_taro3.backend.service.LessonTimeRules
@@ -236,10 +237,7 @@ private fun DayLessonsCard(
                             "${lesson.slot.lesson}限　${LessonTimeRules.formatTime(lesson.startTime)} 〜 ${LessonTimeRules.formatTime(lesson.endTime)}",
                             style = MaterialTheme.typography.titleMedium
                         )
-                        Text(
-                            lesson.subject?.takeIf { it.isNotBlank() } ?: "教科未設定",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        LessonSubjects(lesson.subject, lesson.courseLinks)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { onOpenLessonPage(lesson, CoursePage.MOODLE) }) {
                                 Text("Moodle")
@@ -270,9 +268,29 @@ private fun NextLessonCard(nextLesson: NextLesson?) {
                     "${nextLesson.slot.lesson}限　${SimpleDateFormat("HH:mm", Locale.JAPAN).format(date)} 〜 ${LessonTimeRules.formatTime(nextLesson.endTime)}",
                     style = MaterialTheme.typography.titleLarge
                 )
+                LessonSubjects(nextLesson.subject, nextLesson.courseLinks)
+            }
+        }
+    }
+}
+
+/** 科目ごとに授業名、その下に教室を表示する。 */
+@Composable
+private fun LessonSubjects(subject: String?, courses: List<CourseLinks>) {
+    val rows = courses.distinctBy { it.subject to it.classroom }.ifEmpty {
+        listOf(CourseLinks(subject.orEmpty()))
+    }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        rows.forEach { course ->
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    nextLesson.subject?.takeIf { it.isNotBlank() } ?: "教科未設定",
+                    course.subject.ifBlank { "教科未設定" },
                     style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    course.classroom?.takeIf { it.isNotBlank() } ?: "教室未登録",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -296,7 +314,8 @@ private fun HomeScreenPreview() {
                         set(2026, Calendar.OCTOBER, 26, 8, 40)
                     }.timeInMillis,
                     endTime = LessonTime(9, 30),
-                    subject = "情報処理"
+                    subject = "情報処理",
+                    courseLinks = listOf(CourseLinks("情報処理", classroom = "一般教育棟A21教室"))
                 )
             )
         }
@@ -311,7 +330,10 @@ private fun DayLessonsPreview() {
         DayLessonsCard(
             day = Calendar.MONDAY,
             lessons = listOf(
-                TimetableLesson(TimetableSlot("MON_1", Calendar.MONDAY, 1), LessonTime(8, 40), LessonTime(9, 30), "情報処理"),
+                TimetableLesson(
+                    TimetableSlot("MON_1", Calendar.MONDAY, 1), LessonTime(8, 40), LessonTime(9, 30), "情報処理",
+                    listOf(CourseLinks("情報処理", classroom = "一般教育棟A21教室"))
+                ),
                 TimetableLesson(TimetableSlot("MON_3", Calendar.MONDAY, 3), LessonTime(10, 45), LessonTime(11, 35), "数学"),
                 TimetableLesson(TimetableSlot("MON_5", Calendar.MONDAY, 5), LessonTime(13, 25), LessonTime(14, 15), "英語")
             ),

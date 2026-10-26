@@ -50,8 +50,8 @@ class DayLessonsTest {
     }
 
     @Test fun replacementKeepsLinksForTheirOwnSlotsAndClearsRemovedCourses() {
-        val info = CourseLinks("情報処理", CourseLinkRules.moodleUrl(101))
-        val experiment = CourseLinks("実験", CourseLinkRules.moodleUrl(409))
+        val info = CourseLinks("情報処理", CourseLinkRules.moodleUrl(101), classroom = "A21教室")
+        val experiment = CourseLinks("実験", CourseLinkRules.moodleUrl(409), classroom = "実験室")
         settings.courseLinks = mapOf("FRI_1" to listOf(experiment))
         alarms.allowed = false
 

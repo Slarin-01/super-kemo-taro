@@ -17,7 +17,8 @@ data class NextLesson(
     val slot: TimetableSlot,
     val startsAt: Long,
     val endTime: LessonTime,
-    val subject: String? = null
+    val subject: String? = null,
+    val courseLinks: List<CourseLinks> = emptyList()
 )
 
 /** 曜日ごとの一覧に表示する授業。開始済みの授業も含めて扱う。 */
@@ -106,7 +107,10 @@ class TimetableService(
             val (start, end) = readSlotTimes(slot, useDefaults = true) ?: return@mapNotNull null
             NextLesson(slot, ScheduleCalculator.nextOccurrence(slot.calendarDay, start, now), end)
         }.minByOrNull { it.startsAt }?.let { next ->
-            next.copy(subject = settings.readSlotSubjects()[next.slot.key])
+            next.copy(
+                subject = settings.readSlotSubjects()[next.slot.key],
+                courseLinks = settings.readSlotCourseLinks()[next.slot.key].orEmpty()
+            )
         }
 
     fun canScheduleAlarms(): Boolean = alarms.canScheduleExactAlarms()

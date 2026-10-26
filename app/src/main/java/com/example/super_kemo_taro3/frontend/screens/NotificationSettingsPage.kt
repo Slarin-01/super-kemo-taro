@@ -184,7 +184,15 @@ private fun NotificationModeOption(
 @Composable
 private fun NotificationSettingsScreenPreview() {
     AppScreen {
-        NotificationSettingsScreen(true, {}, LessonEndNotificationMode.KEEP_MUTED, {}, true, {}, {})
+        NotificationSettingsScreen(
+            automaticMutingEnabled = true,
+            onAutomaticMutingChange = {},
+            selectedMode = LessonEndNotificationMode.KEEP_MUTED,
+            onSelectMode = {},
+            showSystemModeNotice = true,
+            onSystemSettings = {},
+            onBack = {}
+        )
     }
 }
 
@@ -193,6 +201,14 @@ private fun NotificationSettingsScreenPreview() {
 @Composable
 private fun NotificationSettingsDisabledScreenPreview() {
     AppScreen {
-        NotificationSettingsScreen(false, {}, LessonEndNotificationMode.KEEP_MUTED, {}, true, {}, {})
+        NotificationSettingsScreen(
+            automaticMutingEnabled = false,
+            onAutomaticMutingChange = {},
+            selectedMode = LessonEndNotificationMode.KEEP_MUTED,
+            onSelectMode = {},
+            showSystemModeNotice = true,
+            onSystemSettings = {},
+            onBack = {}
+        )
     }
 }
