@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_padding">8dp</dimen>
+    <dimen name="widget_period_margin">1dp</dimen>
+    <dimen name="widget_period_max_size">26dp</dimen>
+    <color name="widget_background">#FFFDF8</color>
+    <color name="widget_text">#202821</color>
+    <color name="widget_muted">#576158</color>
+    <color name="widget_accent">#356849</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <color name="widget_empty">#F0F2EC</color>
+    <color name="widget_outline">#D6DED3</color>
+    <string name="widget_name">今日の時間割</string>
+    <string name="widget_description">次の教科・教室と、1〜8限の授業を表示します。当日の授業終了後は翌日の時間割に切り替わります。</string>
+    <string name="widget_next_lesson">次の教科</string>
+    <string name="widget_today">今日</string>
+    <string name="widget_next_time">%1$s · %2$d限 %3$s〜%4$s</string>
+    <string name="widget_today_periods">今日の1〜8限</string>
+    <string name="widget_today_empty">今日は授業がありません</string>
+    <string name="widget_tomorrow_periods">明日の1〜8限</string>
+    <string name="widget_tomorrow_empty">明日は授業がありません</string>
+    <string name="widget_period">%1$d限</string>
+    <string name="widget_period_description">%1$d限、%2$s〜%3$s、%4$s</string>
+    <string name="widget_period_empty_description">%1$d限、授業なし</string>
+    <string name="widget_no_lessons">授業が未登録です</string>
+    <string name="widget_no_subject">教科未設定</string>
+    <string name="widget_no_classroom">教室未登録</string>
+    <string name="widget_setup_hint">タップして時間割を確認</string>
+    <string name="widget_preview_subject">情報処理</string>
+    <string name="widget_preview_classroom">一般教育棟 A21教室</string>
+    <string name="widget_preview_time">今日 · 1限 08:40〜09:30</string>
+    <string name="widget_preview_period_1">1限</string>
+    <string name="widget_preview_period_2">2限</string>
+    <string name="widget_preview_period_3">3限</string>
+    <string name="widget_preview_period_4">4限</string>
+    <string name="widget_preview_period_5">5限</string>
+    <string name="widget_preview_period_6">6限</string>
+    <string name="widget_preview_period_7">7限</string>
+    <string name="widget_preview_period_8">8限</string>
+    <style name="Widget.TimetablePeriodBase" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/widget_period_margin</item>
+        <item name="android:layout_marginEnd">@dimen/widget_period_margin</item>
+        <item name="android:width">24dp</item>
+        <item name="android:height">24dp</item>
+        <item name="android:background">@drawable/widget_period_filled</item>
+        <item name="android:gravity">center</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/widget_on_accent</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="Widget.TimetablePeriod" parent="Widget.TimetablePeriodBase" />
+    <style name="Widget.TimetablePeriod.Empty">
+        <item name="android:background">@drawable/widget_period_empty</item>
+        <item name="android:textColor">@color/widget_muted</item>
+    </style>
+</resources>

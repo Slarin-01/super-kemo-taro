@@ -6,6 +6,8 @@ package com.example.super_kemo_taro3.app
 
 import android.app.Application
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
 import com.example.super_kemo_taro3.backend.repository.SharedPreferencesSettingsRepository
 import com.example.super_kemo_taro3.backend.service.AlarmDeliveryService
@@ -17,6 +19,7 @@ import com.example.super_kemo_taro3.backend.service.PauseService
 import com.example.super_kemo_taro3.backend.service.TimetableService
 import com.example.super_kemo_taro3.frontend.screens.AppThemeController
 import com.example.super_kemo_taro3.frontend.viewmodel.AppearanceState
+import com.example.super_kemo_taro3.frontend.widget.TimetableWidgetProvider
 
 // 1. アプリ起動と保存テーマの適用
 /** 全画面・受信処理が使うサービスを保持し、起動時に保存テーマを適用する。Manifestに登録するApplication。 */
@@ -33,8 +36,14 @@ class BellApplication : Application() {
 // 2. 設定・通知・アラーム処理の接続
 /** ApplicationのContextからRepository・Android API実装・各Serviceを1組作成し、画面とReceiverで共用する。 */
 class AppServices(context: Context) {
+    // 取り込み時の枠・教科・教室の連続保存をまとめ、保存完了後のデータで更新する。
+    private val widgetHandler = Handler(Looper.getMainLooper())
+    private val widgetUpdate = Runnable { TimetableWidgetProvider.updateAll(context.applicationContext) }
     // 画面と受信処理は同じ保存・処理インスタンスを使用する。
-    val settings: SettingsRepository = SharedPreferencesSettingsRepository(context)
+    val settings: SettingsRepository = SharedPreferencesSettingsRepository(context) {
+        widgetHandler.removeCallbacks(widgetUpdate)
+        widgetHandler.post(widgetUpdate)
+    }
     val appearance = AppearanceState(settings)
     private val alarms = AndroidAlarmScheduler(context)
     val notifications = NotificationModeService(AndroidNotificationGateway(context))

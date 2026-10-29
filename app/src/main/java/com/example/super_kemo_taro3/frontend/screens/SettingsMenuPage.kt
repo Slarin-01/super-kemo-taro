@@ -31,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -107,7 +107,7 @@ fun MenuScreen(
         }
     }
     if (showCredits) {
-        val resources = LocalContext.current.resources
+        val resources = LocalResources.current
         val apacheLicense = remember(resources) {
             resources.openRawResource(R.raw.apache_license_2_0)
                 .bufferedReader(Charsets.UTF_8).use { it.readText() }.trim()

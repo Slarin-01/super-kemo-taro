@@ -58,6 +58,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 // 1. ホーム画面の起動とViewModelへの操作の接続
 /** ホームと設定を同じActivityで表示し、下部バーを保持したまま本文を切り替える。 */
@@ -90,7 +91,7 @@ class HomeActivity : AppCompatActivity() {
                     val untilNextLesson = model.uiState.nextLesson?.startsAt?.let {
                         (it - System.currentTimeMillis() + 1L).coerceIn(1L, 60_000L)
                     } ?: 60_000L
-                    delay(untilNextLesson)
+                    delay(untilNextLesson.milliseconds)
                 }
             }
         }

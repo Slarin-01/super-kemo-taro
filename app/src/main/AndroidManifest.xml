@@ -28,6 +28,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Superkemotaro3">
         <activity android:name=".frontend.screens.HomeActivity" android:exported="false" />
+        <receiver
+            android:name=".frontend.widget.TimetableWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/timetable_widget_info" />
+        </receiver>
         <!-- 旧ランチャー識別名をエイリアスとして維持し、新しいホーム画面へつなぐ。 -->
         <activity-alias
             android:name=".MainActivity"
