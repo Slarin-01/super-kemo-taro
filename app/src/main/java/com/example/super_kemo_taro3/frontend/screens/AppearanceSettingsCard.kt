@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -197,7 +198,7 @@ private fun ColorSwatch(
 private fun CustomColorDialog(initialColor: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
     var hex by rememberSaveable { mutableStateOf("%06X".format(initialColor)) }
     val parsed = hex.takeIf { it.length == 6 }?.toIntOrNull(16)
-    var preview by rememberSaveable { mutableStateOf(initialColor) }
+    var preview by rememberSaveable { mutableIntStateOf(initialColor) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("カスタムカラー") },

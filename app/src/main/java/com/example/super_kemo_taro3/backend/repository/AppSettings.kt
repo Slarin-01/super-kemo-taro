@@ -60,7 +60,10 @@ interface SettingsRepository {
 
 // 2. 既存の保存領域・キーを使う実装
 /** SettingsRepositoryをSharedPreferencesで実装する。端末に保存された従来の3領域・キーを引き継ぐ。 */
-class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository {
+class SharedPreferencesSettingsRepository(
+    context: Context,
+    private val onTimetableChanged: () -> Unit = {}
+) : SettingsRepository {
     private val appContext = context.applicationContext
     // 保存領域と既存キーを維持し、更新前の設定をそのまま読み込む。
     private val timetable = appContext.getSharedPreferences("timetable_settings", Context.MODE_PRIVATE)
@@ -73,6 +76,7 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
 
     override fun writeBlockedSlots(slots: Set<String>) {
         timetable.edit().putStringSet("blocked_slots", slots.toSet()).apply()
+        onTimetableChanged()
     }
 
     override fun readSlotSubjects(): Map<String, String> = timetable.all.mapNotNull { (key, value) ->
@@ -86,6 +90,7 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
             timetable.all.keys.filter { it.startsWith(SLOT_SUBJECT_PREFIX) }.forEach { remove(it) }
             subjects.forEach { (slot, subject) -> putString("$SLOT_SUBJECT_PREFIX$slot", subject) }
         }.apply()
+        onTimetableChanged()
     }
 
     override fun readSlotCourseLinks(): Map<String, List<CourseLinks>> =
@@ -122,6 +127,7 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
                 putString("$SLOT_LINKS_PREFIX$slot", array.toString())
             }
         }.apply()
+        onTimetableChanged()
     }
 
     override fun readMoodleToken(): String? = timetable.getString("moodle_token", null)
@@ -184,6 +190,7 @@ class SharedPreferencesSettingsRepository(context: Context) : SettingsRepository
         val editor = this.times.edit()
         times.forEach { (key, value) -> editor.putString(key, value) }
         editor.apply()
+        onTimetableChanged()
     }
 
     override fun readDarkMode(): Boolean? =
