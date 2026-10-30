@@ -135,12 +135,15 @@ class TimetableWidgetProvider : AppWidgetProvider() {
             }
             views.setTextViewText(R.id.widget_next_time, whenText)
             val hasLessons = state.periods.any { it != null }
-            val periodsDescription = if (state.showingTomorrow) {
-                if (hasLessons) R.string.widget_tomorrow_periods else R.string.widget_tomorrow_empty
+            val periodsDescription = if (format("yyyyMMdd", state.periodsDate) == format("yyyyMMdd", state.now)) {
+                context.getString(if (hasLessons) R.string.widget_today_periods else R.string.widget_today_empty)
             } else {
-                if (hasLessons) R.string.widget_today_periods else R.string.widget_today_empty
+                context.getString(
+                    if (hasLessons) R.string.widget_periods_for_day else R.string.widget_empty_for_day,
+                    format("M/d（E）", state.periodsDate)
+                )
             }
-            views.setContentDescription(R.id.widget_periods, context.getString(periodsDescription))
+            views.setContentDescription(R.id.widget_periods, periodsDescription)
             // 文字と同じ倍率で8個の正方形も拡大する。左右の余白を引いた幅を超えないようにする。
             val available = (widthDp * metrics.density).toInt() - 2 * padding -
                 16 * resources.getDimensionPixelSize(R.dimen.widget_period_margin)

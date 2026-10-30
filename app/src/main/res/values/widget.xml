@@ -11,14 +11,14 @@
     <color name="widget_empty">#F0F2EC</color>
     <color name="widget_outline">#D6DED3</color>
     <string name="widget_name">今日の時間割</string>
-    <string name="widget_description">次の教科・教室・進行中のメモの有無と、1〜8限の授業を表示します。当日の授業終了後は翌日の時間割に切り替わります。</string>
+    <string name="widget_description">次の教科・教室・進行中のメモの有無と、1〜8限の授業を表示します。当日の授業終了後は翌日、金曜日の授業終了後と土日は月曜日の時間割に切り替わります。</string>
     <string name="widget_next_lesson">次の教科</string>
     <string name="widget_today">今日</string>
     <string name="widget_next_time">%1$s · %2$d限 %3$s〜%4$s</string>
     <string name="widget_today_periods">今日の1〜8限</string>
     <string name="widget_today_empty">今日は授業がありません</string>
-    <string name="widget_tomorrow_periods">明日の1〜8限</string>
-    <string name="widget_tomorrow_empty">明日は授業がありません</string>
+    <string name="widget_periods_for_day">%1$sの1〜8限</string>
+    <string name="widget_empty_for_day">%1$sは授業がありません</string>
     <string name="widget_period">%1$d限</string>
     <string name="widget_period_description">%1$d限、%2$s〜%3$s、%4$s</string>
     <string name="widget_period_empty_description">%1$d限、授業なし</string>

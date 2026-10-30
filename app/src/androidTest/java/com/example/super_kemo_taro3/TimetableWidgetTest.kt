@@ -113,18 +113,24 @@ class TimetableWidgetTest {
         }
     }
 
-    @Test fun tomorrowSquaresUseTomorrowsAccessibilityDescription() {
+    @Test fun futureSquaresAnnounceTheDisplayedDateIncludingMonday() {
         instrumentation.runOnMainSync {
-            for (hasLessons in listOf(true, false)) {
-                val tomorrow = state().copy(
-                    showingTomorrow = true,
-                    periods = if (hasLessons) state().periods else List(8) { null }
-                )
-                val root = TimetableWidgetProvider.createViews(context, tomorrow, 300f)
-                    .apply(context, FrameLayout(context))
-                val description = if (hasLessons) R.string.widget_tomorrow_periods else R.string.widget_tomorrow_empty
-                assertEquals(context.getString(description),
-                    root.findViewById<LinearLayout>(R.id.widget_periods).contentDescription.toString())
+            for ((day, label) in listOf(27 to "10/27（火）", 33 to "11/2（月）")) {
+                val date = Calendar.getInstance().apply {
+                    clear()
+                    set(2026, Calendar.OCTOBER, day)
+                }.timeInMillis
+                for (hasLessons in listOf(true, false)) {
+                    val future = state().copy(
+                        periodsDate = date,
+                        periods = if (hasLessons) state().periods else List(8) { null }
+                    )
+                    val root = TimetableWidgetProvider.createViews(context, future, 300f)
+                        .apply(context, FrameLayout(context))
+                    val description = if (hasLessons) "${label}の1〜8限" else "${label}は授業がありません"
+                    assertEquals(description,
+                        root.findViewById<LinearLayout>(R.id.widget_periods).contentDescription.toString())
+                }
             }
         }
     }

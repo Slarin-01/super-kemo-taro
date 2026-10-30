@@ -26,7 +26,7 @@ class TimetableWidgetStateTest {
         val state = TimetableWidgetState.read(timetable, date(26, 10))
 
         assertEquals(listOf(1, null, 3, null, null, null, null, 8), state.periods.map { it?.slot?.lesson })
-        assertFalse(state.showingTomorrow)
+        assertEquals(date(26), state.periodsDate)
         assertEquals("MON_3", state.nextLesson?.slot?.key)
         assertEquals(date(26, 10, 45) + 1, state.refreshAt)
         assertTrue(alarms.registrations.isEmpty())
@@ -52,33 +52,34 @@ class TimetableWidgetStateTest {
 
         assertEquals("TUE_2", before.nextLesson?.slot?.key)
         assertEquals(listOf(1, null, 3, null, null, null, null, null), before.periods.map { it?.slot?.lesson })
-        assertFalse(before.showingTomorrow)
+        assertEquals(date(26), before.periodsDate)
         assertEquals(end, before.refreshAt)
 
         val after = TimetableWidgetState.read(timetable, before.refreshAt)
 
-        assertTrue(after.showingTomorrow)
+        assertEquals(date(27), after.periodsDate)
         assertEquals(listOf(null, "TUE_2", null, null, null, null, null, null), after.periods.map { it?.slot?.key })
         assertEquals(date(27), after.refreshAt)
         assertEquals(after.periods, TimetableWidgetState.read(timetable, date(26, 18)).periods)
 
         val midnight = TimetableWidgetState.read(timetable, after.refreshAt)
-        assertFalse(midnight.showingTomorrow)
+        assertEquals(date(27), midnight.periodsDate)
         assertEquals(after.periods, midnight.periods)
         assertEquals(date(27, 9, 40) + 1, midnight.refreshAt)
     }
 
-    @Test fun emptyTomorrowIsNotSkippedAfterFridaysLastLesson() {
+    @Test fun fridaySwitchesToMondayExactlyAtTheLastLessonEnd() {
         settings.selected = setOf("FRI_8", "MON_1")
         val end = date(30, 17, 20)
         val before = TimetableWidgetState.read(timetable, end - 1)
 
         assertEquals("FRI_8", before.periods[7]?.slot?.key)
+        assertEquals(date(30), before.periodsDate)
         assertEquals(end, before.refreshAt)
 
         val after = TimetableWidgetState.read(timetable, before.refreshAt)
-        assertTrue(after.showingTomorrow)
-        assertEquals(List(8) { null }, after.periods)
+        assertEquals(date(33), after.periodsDate)
+        assertEquals(listOf("MON_1") + List(7) { null }, after.periods.map { it?.slot?.key })
         assertEquals("MON_1", after.nextLesson?.slot?.key)
         assertEquals(date(31), after.refreshAt)
     }
@@ -88,20 +89,38 @@ class TimetableWidgetStateTest {
 
         val state = TimetableWidgetState.read(timetable, date(26, 18))
 
-        assertFalse(state.showingTomorrow)
+        assertEquals(date(26), state.periodsDate)
         assertEquals(List(8) { null }, state.periods)
         assertEquals(date(27), state.refreshAt)
     }
 
-    @Test fun weekendHasEightEmptySquaresAndNextWeeksLesson() {
+    @Test fun mondaySquaresRemainThroughTheWeekendAndIntoMondayAcrossAMonthBoundary() {
         settings.selected = setOf("FRI_8", "MON_1")
 
-        val state = TimetableWidgetState.read(timetable, date(24, 12))
+        for (day in listOf(31, 32)) {
+            val state = TimetableWidgetState.read(timetable, date(day, 12))
 
+            assertEquals(date(33), state.periodsDate)
+            assertEquals(listOf("MON_1") + List(7) { null }, state.periods.map { it?.slot?.key })
+            assertEquals("MON_1", state.nextLesson?.slot?.key)
+            assertEquals(date(33, 8, 40), state.nextLesson?.startsAt)
+            assertEquals(date(day + 1), state.refreshAt)
+        }
+        val monday = TimetableWidgetState.read(timetable, date(33))
+        assertEquals(date(33), monday.periodsDate)
+        assertEquals("MON_1", monday.periods[0]?.slot?.key)
+        assertEquals(date(33, 8, 40) + 1, monday.refreshAt)
+    }
+
+    @Test fun mondayWithoutLessonsIsNotSkippedForTuesdaysNextLesson() {
+        settings.selected = setOf("FRI_8", "TUE_2")
+
+        val state = TimetableWidgetState.read(timetable, date(30, 18))
+
+        assertEquals(date(33), state.periodsDate)
         assertEquals(List(8) { null }, state.periods)
-        assertEquals("MON_1", state.nextLesson?.slot?.key)
-        assertEquals(date(26, 8, 40), state.nextLesson?.startsAt)
-        assertEquals(date(25), state.refreshAt)
+        assertEquals("TUE_2", state.nextLesson?.slot?.key)
+        assertEquals(date(31), state.refreshAt)
     }
 
     @Test fun emptyTimetableStillRefreshesAtMidnight() {
@@ -127,10 +146,10 @@ class TimetableWidgetStateTest {
         assertEquals(LessonTime(11, 50), state.periods[0]?.endTime)
         assertEquals(date(26, 11) + 1, state.refreshAt)
         val during = TimetableWidgetState.read(timetable, state.refreshAt)
-        assertFalse(during.showingTomorrow)
+        assertEquals(date(26), during.periodsDate)
         assertEquals(date(26, 11, 50), during.refreshAt)
         val after = TimetableWidgetState.read(timetable, during.refreshAt)
-        assertTrue(after.showingTomorrow)
+        assertEquals(date(27), after.periodsDate)
         assertEquals(List(8) { null }, after.periods)
         assertTrue(alarms.registrations.isEmpty())
     }
