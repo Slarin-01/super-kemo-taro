@@ -61,6 +61,10 @@ class TimetableWidgetTest {
                 root.layout(0, 0, root.measuredWidth, root.measuredHeight)
                 assertEquals(course.subject, root.findViewById<TextView>(R.id.widget_subject).text.toString())
                 assertEquals(course.classroom, root.findViewById<TextView>(R.id.widget_classroom).text.toString())
+                val notes = root.findViewById<TextView>(R.id.widget_notes)
+                assertEquals(context.getString(R.string.widget_notes_none), notes.text.toString())
+                assertTrue(notes.top >= root.findViewById<View>(R.id.widget_classroom).bottom)
+                assertTrue(root.findViewById<View>(R.id.widget_next_time).top >= notes.bottom)
                 val periods = root.findViewById<LinearLayout>(R.id.widget_periods)
                 val header = root.findViewById<View>(R.id.widget_header)
                 // 大きい配置でも、授業情報と8コマの間に余分な高さを挟まない。
@@ -72,7 +76,7 @@ class TimetableWidgetTest {
                 assertEquals("2限", (periods.getChildAt(1) as TextView).text.toString())
                 for (index in 0..7) {
                     val cell = periods.getChildAt(index)
-                    assertEquals(cell.width, cell.height)
+                    assertEquals("${width}x${height}・${index + 1}限", cell.width, cell.height)
                     assertTrue(cell.right <= periods.width)
                     assertTrue(cell.hasOnClickListeners())
                 }
@@ -101,6 +105,8 @@ class TimetableWidgetTest {
             val root = TimetableWidgetProvider.createViews(context, empty, 300f).apply(context, FrameLayout(context))
             assertEquals(context.getString(R.string.widget_no_lessons),
                 root.findViewById<TextView>(R.id.widget_subject).text.toString())
+            assertEquals(context.getString(R.string.widget_notes_none),
+                root.findViewById<TextView>(R.id.widget_notes).text.toString())
             assertEquals(context.getString(R.string.widget_today_empty),
                 root.findViewById<LinearLayout>(R.id.widget_periods).contentDescription.toString())
             assertEquals(8, root.findViewById<LinearLayout>(R.id.widget_periods).childCount)
@@ -119,6 +125,19 @@ class TimetableWidgetTest {
                 val description = if (hasLessons) R.string.widget_tomorrow_periods else R.string.widget_tomorrow_empty
                 assertEquals(context.getString(description),
                     root.findViewById<LinearLayout>(R.id.widget_periods).contentDescription.toString())
+            }
+        }
+    }
+
+    @Test fun noteAvailabilityIsDisplayedAndAnnouncedForBothStates() {
+        instrumentation.runOnMainSync {
+            for (hasNote in listOf(true, false)) {
+                val root = TimetableWidgetProvider.createViews(context, state().copy(hasNextLessonNote = hasNote), 300f)
+                    .apply(context, FrameLayout(context))
+                val expected = context.getString(if (hasNote) R.string.widget_notes_available else R.string.widget_notes_none)
+                val notes = root.findViewById<TextView>(R.id.widget_notes)
+                assertEquals(expected, notes.text.toString())
+                assertEquals(expected, notes.contentDescription.toString())
             }
         }
     }

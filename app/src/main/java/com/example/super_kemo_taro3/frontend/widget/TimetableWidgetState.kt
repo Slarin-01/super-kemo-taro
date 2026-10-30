@@ -1,5 +1,6 @@
 package com.example.super_kemo_taro3.frontend.widget
 
+import com.example.super_kemo_taro3.backend.repository.Note
 import com.example.super_kemo_taro3.backend.service.NextLesson
 import com.example.super_kemo_taro3.backend.service.TimetableLesson
 import com.example.super_kemo_taro3.backend.service.TimetableService
@@ -11,10 +12,15 @@ data class TimetableWidgetState(
     val nextLesson: NextLesson?,
     val periods: List<TimetableLesson?>,
     val refreshAt: Long,
-    val showingTomorrow: Boolean = false
+    val showingTomorrow: Boolean = false,
+    val hasNextLessonNote: Boolean = false
 ) {
     companion object {
-        fun read(timetable: TimetableService, now: Long = System.currentTimeMillis()): TimetableWidgetState {
+        fun read(
+            timetable: TimetableService,
+            now: Long = System.currentTimeMillis(),
+            notes: List<Note> = emptyList()
+        ): TimetableWidgetState {
             val today = Calendar.getInstance().apply { timeInMillis = now }
             val todayLessons = timetable.readLessonsForDay(today[Calendar.DAY_OF_WEEK])
             val lastEnd = todayLessons.maxOfOrNull { lesson ->
@@ -26,6 +32,12 @@ data class TimetableWidgetState(
                 }.timeInMillis
             }
             val next = timetable.readNextLesson(now)
+            val subjects = next?.courseLinks.orEmpty().map { it.subject.trim() }
+                .filter { it.isNotEmpty() }.ifEmpty { listOfNotNull(next?.subject?.trim()) }
+                .filter { it.isNotEmpty() }.toSet()
+            // 教科なしや別の教科、期限切れのメモは「あり」の対象にしない。
+            val nextLessonNotes = notes.filter { it.subject.trim() in subjects && !it.isExpired(now) }
+            val noteDeadline = nextLessonNotes.mapNotNull { it.dueAt }.minOrNull()
             val tomorrow = (today.clone() as Calendar).apply {
                 add(Calendar.DAY_OF_YEAR, 1)
                 set(Calendar.HOUR_OF_DAY, 0)
@@ -47,9 +59,11 @@ data class TimetableWidgetState(
                 refreshAt = minOf(
                     midnight,
                     next?.startsAt?.plus(1L) ?: midnight,
-                    lastEnd?.takeIf { it > now } ?: midnight
+                    lastEnd?.takeIf { it > now } ?: midnight,
+                    noteDeadline ?: midnight
                 ),
-                showingTomorrow = showingTomorrow
+                showingTomorrow = showingTomorrow,
+                hasNextLessonNote = nextLessonNotes.isNotEmpty()
             )
         }
     }

@@ -88,6 +88,16 @@ class TimetableService(
 ) {
     fun readSelectedSlots(): Set<String> = settings.readBlockedSlots()
 
+    /** 複数教科のある枠はまとめた表示名ではなく、教科を個別に選べるようにする。 */
+    fun readSubjects(): List<String> {
+        val links = settings.readSlotCourseLinks()
+        val subjects = settings.readSlotSubjects()
+        return (links.keys + subjects.keys).flatMap { slot ->
+            links[slot].orEmpty().map { it.subject }.filter { it.isNotBlank() }
+                .ifEmpty { listOfNotNull(subjects[slot]) }
+        }.map { it.trim() }.filter { it.isNotEmpty() }.distinct().sorted()
+    }
+
     /** 指定曜日の登録済み授業を時限順で返す。表示する時刻はアラームと共通の読み取り方を使う。 */
     fun readLessonsForDay(day: Int): List<TimetableLesson> {
         val subjects = settings.readSlotSubjects()

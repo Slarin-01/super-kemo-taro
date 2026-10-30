@@ -46,7 +46,10 @@ class AppServices(context: Context) {
         widgetHandler.post(widgetUpdate)
     }
     val appearance = AppearanceState(settings)
-    val notes = SharedPreferencesNotesRepository(context)
+    val notes = SharedPreferencesNotesRepository(context) {
+        widgetHandler.removeCallbacks(widgetUpdate)
+        widgetHandler.post(widgetUpdate)
+    }
     private val alarms = AndroidAlarmScheduler(context)
     val notifications = NotificationModeService(AndroidNotificationGateway(context))
     val pause = PauseService(settings, notifications)

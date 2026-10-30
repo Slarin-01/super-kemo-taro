@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -55,6 +56,7 @@ import com.example.super_kemo_taro3.frontend.viewmodel.NotesViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -66,6 +68,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class HomeActivity : AppCompatActivity() {
     private var destination by mutableStateOf(MainDestination.Home)
     private lateinit var menuModel: MenuViewModel
+    private var pendingNoteSubject by mutableStateOf<String?>(null)
 
     private val notesModel by lazy {
         ViewModelProvider(this, ScreenViewModelFactory {
@@ -86,10 +89,22 @@ class HomeActivity : AppCompatActivity() {
         destination = restoredDestination(
             savedInstanceState?.getString(EXTRA_DESTINATION) ?: intent.getStringExtra(EXTRA_DESTINATION)
         )
+        pendingNoteSubject = savedInstanceState?.getString("pending_note_subject")
         menuModel = ViewModelProvider(this, ScreenViewModelFactory {
             MenuViewModel(savedInstanceState?.getBoolean("show_credits", false) ?: false)
         })[MenuViewModel::class.java]
         model.refresh()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                // 新しい期限を保存したら待機時間も組み直し、復帰時には即座に再判定する。
+                snapshotFlow { notesModel.notes }.collectLatest {
+                    while (true) {
+                        notesModel.refreshTime()
+                        delay(notesModel.millisUntilNextDeadline().milliseconds)
+                    }
+                }
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 // 授業開始直後に次の予定へ進め、開いたままの画面にも時刻の経過を反映する。
@@ -120,11 +135,21 @@ class HomeActivity : AppCompatActivity() {
                             selectedDay = model.uiState.selectedDay,
                             dayLessons = model.uiState.dayLessons,
                             onSlotClick = model::selectDay,
-                            onOpenLessonPage = { lesson, page -> LessonBrowserNavigator.open(this, lesson, page) }
+                            onOpenLessonPage = { lesson, page -> LessonBrowserNavigator.open(this, lesson, page) },
+                            onCreateNote = { subject ->
+                                pendingNoteSubject = subject
+                                selectDestination(MainDestination.Notes)
+                            }
                         )
                         MainDestination.Notes -> NotesScreen(
-                            notes = notesModel.notes,
-                            onSaveNote = notesModel::saveNote
+                            activeNotes = notesModel.activeNotes,
+                            expiredNotes = notesModel.expiredNotes,
+                            subjects = appServices.timetable.readSubjects(),
+                            newNoteSubject = pendingNoteSubject,
+                            onNewNoteOpened = { pendingNoteSubject = null },
+                            onSaveNote = notesModel::saveNote,
+                            onDeleteNote = notesModel::deleteNote,
+                            onDeleteExpiredNotes = notesModel::deleteExpiredNotes
                         )
                         MainDestination.Settings -> MenuScreen(
                             creditMessage = menuModel.creditMessage,
@@ -164,12 +189,14 @@ class HomeActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(EXTRA_DESTINATION, destination.name)
         outState.putBoolean("show_credits", menuModel.showCredits)
+        outState.putString("pending_note_subject", pendingNoteSubject)
         super.onSaveInstanceState(outState)
     }
 
     private fun selectDestination(next: MainDestination) {
         // 設定タブへ移るときも、停止期限が過ぎていないか確認する。
         model.refresh()
+        if (next == MainDestination.Notes) notesModel.refreshTime()
         destination = next
     }
 
@@ -190,7 +217,8 @@ fun HomeScreen(
     selectedDay: Int? = null,
     dayLessons: List<TimetableLesson> = emptyList(),
     onSlotClick: (String) -> Unit = {},
-    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> }
+    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> },
+    onCreateNote: (String) -> Unit = {}
 ) {
     val dayLessonsRequester = remember { BringIntoViewRequester() }
     LaunchedEffect(selectedDay) {
@@ -213,7 +241,8 @@ fun HomeScreen(
         TimetableGrid(blockedSlots, onSlotClick = onSlotClick)
         if (selectedDay != null) {
             DayLessonsCard(
-                selectedDay, dayLessons, Modifier.bringIntoViewRequester(dayLessonsRequester), onOpenLessonPage
+                selectedDay, dayLessons, Modifier.bringIntoViewRequester(dayLessonsRequester), onOpenLessonPage,
+                onCreateNote
             )
         }
     }
@@ -224,7 +253,8 @@ private fun DayLessonsCard(
     day: Int,
     lessons: List<TimetableLesson>,
     modifier: Modifier = Modifier,
-    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> }
+    onOpenLessonPage: (TimetableLesson, CoursePage) -> Unit = { _, _ -> },
+    onCreateNote: (String) -> Unit = {}
 ) {
     val dayLabel = when (day) {
         Calendar.MONDAY -> "月"
@@ -250,7 +280,7 @@ private fun DayLessonsCard(
                             "${lesson.slot.lesson}限　${LessonTimeRules.formatTime(lesson.startTime)} 〜 ${LessonTimeRules.formatTime(lesson.endTime)}",
                             style = MaterialTheme.typography.titleMedium
                         )
-                        LessonSubjects(lesson.subject, lesson.courseLinks)
+                        LessonSubjects(lesson.subject, lesson.courseLinks, onCreateNote)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { onOpenLessonPage(lesson, CoursePage.MOODLE) }) {
                                 Text("Moodle")
@@ -289,17 +319,27 @@ private fun NextLessonCard(nextLesson: NextLesson?) {
 
 /** 科目ごとに授業名、その下に教室を表示する。 */
 @Composable
-private fun LessonSubjects(subject: String?, courses: List<CourseLinks>) {
+private fun LessonSubjects(
+    subject: String?,
+    courses: List<CourseLinks>,
+    onCreateNote: ((String) -> Unit)? = null
+) {
     val rows = courses.distinctBy { it.subject to it.classroom }.ifEmpty {
         listOf(CourseLinks(subject.orEmpty()))
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         rows.forEach { course ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    course.subject.ifBlank { "教科未設定" },
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        course.subject.ifBlank { "教科未設定" },
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    if (onCreateNote != null) {
+                        TextButton(onClick = { onCreateNote(course.subject) }) { Text("メモ") }
+                    }
+                }
                 Text(
                     course.classroom?.takeIf { it.isNotBlank() } ?: "教室未登録",
                     style = MaterialTheme.typography.bodyMedium,

@@ -8,8 +8,12 @@ data class Note(
     val id: String,
     val title: String,
     val body: String,
-    val updatedAt: Long
-)
+    val updatedAt: Long,
+    val subject: String = "",
+    val dueAt: Long? = null
+) {
+    fun isExpired(now: Long): Boolean = dueAt?.let { it <= now } ?: false
+}
 
 interface NotesRepository {
     fun readNotes(): List<Note>
@@ -17,7 +21,10 @@ interface NotesRepository {
 }
 
 /** メモは時間割や設定と分けて端末内に保存する。 */
-class SharedPreferencesNotesRepository(context: Context) : NotesRepository {
+class SharedPreferencesNotesRepository(
+    context: Context,
+    private val onNotesChanged: () -> Unit = {}
+) : NotesRepository {
     private val preferences = context.applicationContext
         .getSharedPreferences("notes", Context.MODE_PRIVATE)
 
@@ -26,7 +33,14 @@ class SharedPreferencesNotesRepository(context: Context) : NotesRepository {
         (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            Note(id, item.optString("title"), item.optString("body"), item.optLong("updatedAt"))
+            Note(
+                id = id,
+                title = item.optString("title"),
+                body = item.optString("body"),
+                updatedAt = item.optLong("updatedAt"),
+                subject = item.optString("subject"),
+                dueAt = if (item.isNull("dueAt")) null else item.optLong("dueAt")
+            )
         }
     }.getOrDefault(emptyList())
 
@@ -38,8 +52,11 @@ class SharedPreferencesNotesRepository(context: Context) : NotesRepository {
                 put("title", note.title)
                 put("body", note.body)
                 put("updatedAt", note.updatedAt)
+                put("subject", note.subject)
+                put("dueAt", note.dueAt ?: JSONObject.NULL)
             })
         }
         preferences.edit().putString("items", array.toString()).apply()
+        onNotesChanged()
     }
 }
