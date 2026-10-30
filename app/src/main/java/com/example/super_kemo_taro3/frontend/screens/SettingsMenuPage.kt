@@ -189,7 +189,7 @@ private fun SettingsMenuRow(entry: SettingsMenuEntry, first: Boolean, last: Bool
 @Composable
 private fun MenuScreenPreview() {
     AppScreen {
-        MainScreenScaffold(destination = MainDestination.Settings, onHome = {}, onSettings = {}) {
+        MainScreenScaffold(destination = MainDestination.Settings, onHome = {}, onNotes = {}, onSettings = {}) {
             MenuScreen(
                 creditMessage = "言十ベル",
                 showCredits = false,

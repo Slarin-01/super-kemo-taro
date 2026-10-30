@@ -1,5 +1,5 @@
 /*
- * フロントエンド・画面: ホーム・設定の起動、状態の接続、下部ナビゲーションの表示。
+ * フロントエンド・画面: ホーム・メモ・設定の起動、状態の接続、下部ナビゲーションの表示。
  * 画面は表示と操作の通知を担当する。保存・通知制御・予約の判断はViewModelからサービスへ渡す。
  */
 package com.example.super_kemo_taro3.frontend.screens
@@ -51,6 +51,7 @@ import com.example.super_kemo_taro3.backend.service.TimetableLesson
 import com.example.super_kemo_taro3.backend.service.TimetableSlot
 import com.example.super_kemo_taro3.frontend.viewmodel.HomeViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.MenuViewModel
+import com.example.super_kemo_taro3.frontend.viewmodel.NotesViewModel
 import com.example.super_kemo_taro3.frontend.viewmodel.ScreenViewModelFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,10 +62,16 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 // 1. ホーム画面の起動とViewModelへの操作の接続
-/** ホームと設定を同じActivityで表示し、下部バーを保持したまま本文を切り替える。 */
+/** ホーム・メモ・設定を同じActivityで表示し、下部バーを保持したまま本文を切り替える。 */
 class HomeActivity : AppCompatActivity() {
     private var destination by mutableStateOf(MainDestination.Home)
     private lateinit var menuModel: MenuViewModel
+
+    private val notesModel by lazy {
+        ViewModelProvider(this, ScreenViewModelFactory {
+            NotesViewModel(appServices.notes)
+        })[NotesViewModel::class.java]
+    }
 
     private val model by lazy {
         val services = appServices
@@ -97,12 +104,13 @@ class HomeActivity : AppCompatActivity() {
         }
         setContent {
             AppScreen {
-                BackHandler(enabled = destination == MainDestination.Settings) {
+                BackHandler(enabled = destination != MainDestination.Home) {
                     selectDestination(MainDestination.Home)
                 }
                 MainScreenScaffold(
                     destination = destination,
                     onHome = { selectDestination(MainDestination.Home) },
+                    onNotes = { selectDestination(MainDestination.Notes) },
                     onSettings = { selectDestination(MainDestination.Settings) }
                 ) { page ->
                     when (page) {
@@ -113,6 +121,10 @@ class HomeActivity : AppCompatActivity() {
                             dayLessons = model.uiState.dayLessons,
                             onSlotClick = model::selectDay,
                             onOpenLessonPage = { lesson, page -> LessonBrowserNavigator.open(this, lesson, page) }
+                        )
+                        MainDestination.Notes -> NotesScreen(
+                            notes = notesModel.notes,
+                            onSaveNote = notesModel::saveNote
                         )
                         MainDestination.Settings -> MenuScreen(
                             creditMessage = menuModel.creditMessage,
@@ -305,7 +317,7 @@ private fun LessonSubjects(subject: String?, courses: List<CourseLinks>) {
 @Composable
 private fun HomeScreenPreview() {
     AppScreen {
-        MainScreenScaffold(destination = MainDestination.Home, onHome = {}, onSettings = {}) {
+        MainScreenScaffold(destination = MainDestination.Home, onHome = {}, onNotes = {}, onSettings = {}) {
             HomeScreen(
                 blockedSlots = setOf("MON_1", "TUE_3", "FRI_5"),
                 nextLesson = NextLesson(
