@@ -51,7 +51,8 @@ class TimetableWidgetProvider : AppWidgetProvider() {
                 cancelRefresh(context)
                 return
             }
-            val state = TimetableWidgetState.read(context.appServices.timetable)
+            val services = context.appServices
+            val state = TimetableWidgetState.read(services.timetable, notes = services.notes.readNotes())
             ids.forEach { id ->
                 manager.updateAppWidget(id, sizedViews(context, manager.getAppWidgetOptions(id), state))
             }
@@ -102,6 +103,7 @@ class TimetableWidgetProvider : AppWidgetProvider() {
                 R.id.widget_next_label to 10f,
                 R.id.widget_subject to 15f,
                 R.id.widget_classroom to 11f,
+                R.id.widget_notes to 11f,
                 R.id.widget_next_time to 10f
             ).forEach { (id, size) -> views.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, size * scale) }
             val openHome = PendingIntent.getActivity(
@@ -120,6 +122,10 @@ class TimetableWidgetProvider : AppWidgetProvider() {
             views.setContentDescription(R.id.widget_subject, subject)
             views.setTextViewText(R.id.widget_classroom, classroom)
             views.setContentDescription(R.id.widget_classroom, classroom)
+            val notesText = context.getString(if (state.hasNextLessonNote)
+                R.string.widget_notes_available else R.string.widget_notes_none)
+            views.setTextViewText(R.id.widget_notes, notesText)
+            views.setContentDescription(R.id.widget_notes, notesText)
             val whenText = if (next == null) "" else {
                 val day = if (format("yyyyMMdd", next.startsAt) == format("yyyyMMdd", state.now)) {
                     context.getString(R.string.widget_today)

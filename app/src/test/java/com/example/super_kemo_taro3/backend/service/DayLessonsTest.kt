@@ -67,4 +67,15 @@ class DayLessonsTest {
         timetable.replaceSelectedSlots(emptySet())
         assertTrue(settings.courseLinks.isEmpty())
     }
+
+    @Test fun subjectChoicesKeepMultipleCoursesSeparateAndSupportOlderSubjectOnlyTimetables() {
+        settings.subjects = mapOf("MON_1" to "数学 / 情報処理", "TUE_1" to "英語", "WED_1" to " ")
+        settings.courseLinks = mapOf(
+            "MON_1" to listOf(CourseLinks("数学"), CourseLinks("情報処理")),
+            "THU_1" to listOf(CourseLinks(" 数学 "), CourseLinks(""))
+        )
+        assertEquals(setOf("数学", "情報処理", "英語"), timetable.readSubjects().toSet())
+        assertEquals(3, timetable.readSubjects().size)
+        assertTrue(alarms.registrations.isEmpty())
+    }
 }

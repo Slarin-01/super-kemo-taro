@@ -11,7 +11,7 @@
     <color name="widget_empty">#F0F2EC</color>
     <color name="widget_outline">#D6DED3</color>
     <string name="widget_name">今日の時間割</string>
-    <string name="widget_description">次の教科・教室と、1〜8限の授業を表示します。当日の授業終了後は翌日の時間割に切り替わります。</string>
+    <string name="widget_description">次の教科・教室・進行中のメモの有無と、1〜8限の授業を表示します。当日の授業終了後は翌日の時間割に切り替わります。</string>
     <string name="widget_next_lesson">次の教科</string>
     <string name="widget_today">今日</string>
     <string name="widget_next_time">%1$s · %2$d限 %3$s〜%4$s</string>
@@ -25,6 +25,8 @@
     <string name="widget_no_lessons">授業が未登録です</string>
     <string name="widget_no_subject">教科未設定</string>
     <string name="widget_no_classroom">教室未登録</string>
+    <string name="widget_notes_available">メモ：あり</string>
+    <string name="widget_notes_none">メモ：なし</string>
     <string name="widget_setup_hint">タップして時間割を確認</string>
     <string name="widget_preview_subject">情報処理</string>
     <string name="widget_preview_classroom">一般教育棟 A21教室</string>

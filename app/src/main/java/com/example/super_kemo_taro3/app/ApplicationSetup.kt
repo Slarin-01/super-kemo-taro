@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import com.example.super_kemo_taro3.backend.repository.SettingsRepository
 import com.example.super_kemo_taro3.backend.repository.SharedPreferencesSettingsRepository
+import com.example.super_kemo_taro3.backend.repository.SharedPreferencesNotesRepository
 import com.example.super_kemo_taro3.backend.service.AlarmDeliveryService
 import com.example.super_kemo_taro3.backend.service.AndroidAlarmScheduler
 import com.example.super_kemo_taro3.backend.service.AndroidNotificationGateway
@@ -45,6 +46,10 @@ class AppServices(context: Context) {
         widgetHandler.post(widgetUpdate)
     }
     val appearance = AppearanceState(settings)
+    val notes = SharedPreferencesNotesRepository(context) {
+        widgetHandler.removeCallbacks(widgetUpdate)
+        widgetHandler.post(widgetUpdate)
+    }
     private val alarms = AndroidAlarmScheduler(context)
     val notifications = NotificationModeService(AndroidNotificationGateway(context))
     val pause = PauseService(settings, notifications)

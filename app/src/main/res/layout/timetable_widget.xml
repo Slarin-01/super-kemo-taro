@@ -56,6 +56,16 @@
                 android:textColor="@color/widget_text"
                 android:textSize="11sp" />
             <TextView
+                android:id="@+id/widget_notes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/widget_notes_none"
+                android:textColor="@color/widget_text"
+                android:textSize="11sp" />
+            <TextView
                 android:id="@+id/widget_next_time"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -71,7 +81,7 @@
         android:id="@+id/widget_periods"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal">
         <TextView style="@style/Widget.TimetablePeriod" android:text="@string/widget_preview_period_1" />

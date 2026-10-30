@@ -1,6 +1,7 @@
 package com.example.super_kemo_taro3.frontend.widget
 
 import com.example.super_kemo_taro3.backend.repository.CourseLinks
+import com.example.super_kemo_taro3.backend.repository.Note
 import com.example.super_kemo_taro3.backend.service.LessonTime
 import com.example.super_kemo_taro3.backend.service.MemorySettingsRepository
 import com.example.super_kemo_taro3.backend.service.RecordingAlarmScheduler
@@ -131,6 +132,65 @@ class TimetableWidgetStateTest {
         val after = TimetableWidgetState.read(timetable, during.refreshAt)
         assertTrue(after.showingTomorrow)
         assertEquals(List(8) { null }, after.periods)
+        assertTrue(alarms.registrations.isEmpty())
+    }
+
+    @Test fun noteIndicatorRequiresAMatchingSubjectAndAnUnexpiredNote() {
+        settings.selected = setOf("MON_1")
+        settings.subjects = mapOf("MON_1" to "情報処理")
+        val now = date(26, 8)
+        val ignored = listOf(
+            Note("other", "課題", "本文", now, "数学"),
+            Note("expired", "課題", "本文", now, "情報処理", now),
+            Note("unassigned", "課題", "本文", now)
+        )
+        assertFalse(TimetableWidgetState.read(timetable, now, ignored).hasNextLessonNote)
+
+        val active = Note("active", "持ち物", "ノート", now, " 情報処理 ")
+        assertTrue(TimetableWidgetState.read(timetable, now, ignored + active).hasNextLessonNote)
+        assertFalse(TimetableWidgetState.read(timetable, now, ignored).hasNextLessonNote)
+
+        settings.selected = emptySet()
+        assertFalse(TimetableWidgetState.read(timetable, now, listOf(active)).hasNextLessonNote)
+    }
+
+    @Test fun noteIndicatorMatchesEachCourseInASharedPeriod() {
+        settings.selected = setOf("MON_1")
+        settings.subjects = mapOf("MON_1" to "情報処理 / 数学")
+        settings.courseLinks = mapOf("MON_1" to listOf(CourseLinks("情報処理"), CourseLinks("数学")))
+        val now = date(26, 8)
+        for (subject in listOf("情報処理", "数学")) {
+            val note = Note("note", "課題", "本文", now, subject)
+            assertTrue(TimetableWidgetState.read(timetable, now, listOf(note)).hasNextLessonNote)
+        }
+        val unrelated = Note("note", "課題", "本文", now, "英語")
+        assertFalse(TimetableWidgetState.read(timetable, now, listOf(unrelated)).hasNextLessonNote)
+    }
+
+    @Test fun widgetRefreshesAtRelevantDeadlinesUntilTheLastActiveNoteExpires() {
+        settings.selected = setOf("MON_1")
+        settings.subjects = mapOf("MON_1" to "情報処理")
+        settings.times["time_start_1"] = "11:00"
+        settings.times["time_end_1"] = "11:50"
+        val now = date(26, 10)
+        val firstDeadline = date(26, 10, 10)
+        val lastDeadline = date(26, 10, 20)
+        val notes = listOf(
+            Note("first", "課題", "本文", now, "情報処理", firstDeadline),
+            Note("last", "持ち物", "本文", now, "情報処理", lastDeadline),
+            Note("other", "課題", "本文", now, "数学", date(26, 10, 1))
+        )
+        val before = TimetableWidgetState.read(timetable, now, notes)
+        assertTrue(before.hasNextLessonNote)
+        assertEquals(firstDeadline, before.refreshAt)
+
+        val between = TimetableWidgetState.read(timetable, before.refreshAt, notes)
+        assertTrue(between.hasNextLessonNote)
+        assertEquals(lastDeadline, between.refreshAt)
+
+        val after = TimetableWidgetState.read(timetable, between.refreshAt, notes)
+        assertFalse(after.hasNextLessonNote)
+        assertEquals(date(26, 11) + 1, after.refreshAt)
         assertTrue(alarms.registrations.isEmpty())
     }
 }

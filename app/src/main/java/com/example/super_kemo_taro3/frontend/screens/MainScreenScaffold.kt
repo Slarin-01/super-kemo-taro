@@ -19,13 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.example.super_kemo_taro3.R
 
-enum class MainDestination { Home, Settings }
+enum class MainDestination { Home, Notes, Settings }
 
 /** 下部バーを保持し、タブの本文だけをアニメーションで切り替える。 */
 @Composable
 fun MainScreenScaffold(
     destination: MainDestination,
     onHome: () -> Unit,
+    onNotes: () -> Unit,
     onSettings: () -> Unit,
     content: @Composable (MainDestination) -> Unit
 ) {
@@ -43,6 +44,14 @@ fun MainScreenScaffold(
                         Icon(painterResource(R.drawable.ic_home), contentDescription = null)
                     },
                     label = { Text("ホーム") }
+                )
+                NavigationBarItem(
+                    selected = destination == MainDestination.Notes,
+                    onClick = { if (destination != MainDestination.Notes) onNotes() },
+                    icon = {
+                        Icon(painterResource(R.drawable.ic_notes), contentDescription = null)
+                    },
+                    label = { Text("メモ") }
                 )
                 NavigationBarItem(
                     selected = destination == MainDestination.Settings,
