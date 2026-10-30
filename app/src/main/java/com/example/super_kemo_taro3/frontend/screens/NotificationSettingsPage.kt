@@ -1,5 +1,6 @@
 package com.example.super_kemo_taro3.frontend.screens
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -54,6 +56,7 @@ class NotificationSettingsActivity : AppCompatActivity() {
                     onSelectMode = model::selectMode,
                     showSystemModeNotice = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM,
                     onSystemSettings = { PermissionSettingsNavigator.openNotificationModeSettings(this) },
+                    onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) },
                     onBack = { finish() }
                 )
             }
@@ -69,6 +72,7 @@ fun NotificationSettingsScreen(
     onSelectMode: (LessonEndNotificationMode) -> Unit,
     showSystemModeNotice: Boolean,
     onSystemSettings: () -> Unit,
+    onNotificationTest: () -> Unit,
     onBack: () -> Unit
 ) {
     Column(
@@ -114,6 +118,9 @@ fun NotificationSettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             TextButton(onClick = onSystemSettings) { Text("本体の通知モード設定を開く") }
+        }
+        OutlinedButton(onClick = onNotificationTest, modifier = Modifier.fillMaxWidth()) {
+            Text("通知切り替えテスト")
         }
     }
 }
@@ -191,6 +198,7 @@ private fun NotificationSettingsScreenPreview() {
             onSelectMode = {},
             showSystemModeNotice = true,
             onSystemSettings = {},
+            onNotificationTest = {},
             onBack = {}
         )
     }
@@ -208,6 +216,7 @@ private fun NotificationSettingsDisabledScreenPreview() {
             onSelectMode = {},
             showSystemModeNotice = true,
             onSystemSettings = {},
+            onNotificationTest = {},
             onBack = {}
         )
     }

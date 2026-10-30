@@ -160,7 +160,6 @@ class HomeActivity : AppCompatActivity() {
                             onTimetable = { startActivity(Intent(this, TimetableEditorActivity::class.java)) },
                             onTimeSettings = { startActivity(Intent(this, LessonTimeEditorActivity::class.java)) },
                             onNotificationSettings = { startActivity(Intent(this, NotificationSettingsActivity::class.java)) },
-                            onNotificationTest = { startActivity(Intent(this, NotificationTestActivity::class.java)) },
                             onThemeSettings = { startActivity(Intent(this, ThemeEditorActivity::class.java)) },
                             paused = model.uiState.paused,
                             onTogglePause = model::togglePause

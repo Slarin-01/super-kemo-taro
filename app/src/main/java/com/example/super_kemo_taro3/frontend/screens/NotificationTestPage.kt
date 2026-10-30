@@ -114,7 +114,7 @@ fun NotificationTestScreen(
             Text("本体設定や別のモードによるミュートが有効です。通知を戻すには、本体側の設定も解除してください。")
             Button(onClick = onSystemSettings) { Text("本体の通知モード設定を開く") }
         }
-        Button(onClick = onBack) { Text("メニューに戻る") }
+        Button(onClick = onBack) { Text("通知設定に戻る") }
     }
 }
 
