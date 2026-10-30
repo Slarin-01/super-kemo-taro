@@ -34,6 +34,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -64,7 +66,6 @@ fun MenuScreen(
     onTimetable: () -> Unit,
     onTimeSettings: () -> Unit,
     onNotificationSettings: () -> Unit,
-    onNotificationTest: () -> Unit,
     onThemeSettings: () -> Unit,
     paused: Boolean,
     onTogglePause: () -> Unit
@@ -80,30 +81,35 @@ fun MenuScreen(
                 fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Normal
             )
         )
-        val entries = listOf(
-            SettingsMenuEntry(
-                "日曜日まで機能を停止",
-                if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
-                R.drawable.ic_menu_pause,
-                onTogglePause,
-                checked = paused
-            ),
-            SettingsMenuEntry("テーマを編集", "ライト・ダークやテーマカラーを変更します", R.drawable.ic_menu_palette, onThemeSettings),
-            SettingsMenuEntry("履修を取り込む", "Moodleから履修情報を取り込みます", R.drawable.ic_menu_import, onMoodle),
-            SettingsMenuEntry("時刻設定", "通知を抑える曜日と時限を選びます", R.drawable.ic_menu_timetable, onTimetable),
-            SettingsMenuEntry("時限カスタム", "各時限の開始・終了時刻を変更します", R.drawable.ic_menu_clock, onTimeSettings),
-            SettingsMenuEntry("通知設定", "授業終了後の通知ミュートの扱いを選びます", R.drawable.ic_menu_notifications, onNotificationSettings),
-            SettingsMenuEntry("通知切り替えテスト", "通知のミュート・解除を確認します", R.drawable.ic_menu_notifications, onNotificationTest),
-            SettingsMenuEntry("クレジット", "アプリの情報・制作メンバー・ライセンスを表示します", R.drawable.ic_menu_info, onOpenCredits)
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            entries.forEachIndexed { index, entry ->
-                SettingsMenuRow(
-                    entry = entry,
-                    first = index == 0,
-                    last = index == entries.lastIndex
+        Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+            SettingsMenuSection(
+                title = "よく使う機能",
+                entries = listOf(
+                    SettingsMenuEntry(
+                        "日曜日まで機能を停止",
+                        if (paused) "日曜日まで停止: ON" else "日曜日まで停止: OFF",
+                        R.drawable.ic_menu_pause,
+                        onTogglePause,
+                        checked = paused
+                    ),
+                    SettingsMenuEntry("テーマを編集", "ライト・ダークやテーマカラーを変更します", R.drawable.ic_menu_palette, onThemeSettings),
+                    SettingsMenuEntry("履修を取り込む", "Moodleから履修情報を取り込みます", R.drawable.ic_menu_import, onMoodle),
+                    SettingsMenuEntry("通知設定", "授業終了後の通知ミュートの扱いを選びます", R.drawable.ic_menu_notifications, onNotificationSettings)
                 )
-            }
+            )
+            SettingsMenuSection(
+                title = "クレジット",
+                entries = listOf(
+                    SettingsMenuEntry("クレジット", "アプリの情報・制作メンバー・ライセンスを表示します", R.drawable.ic_menu_info, onOpenCredits)
+                )
+            )
+            SettingsMenuSection(
+                title = "開発中機能<非推奨の機能>",
+                entries = listOf(
+                    SettingsMenuEntry("時刻設定", "通知を抑える曜日と時限を選びます", R.drawable.ic_menu_timetable, onTimetable),
+                    SettingsMenuEntry("時限カスタム", "各時限の開始・終了時刻を変更します", R.drawable.ic_menu_clock, onTimeSettings)
+                )
+            )
         }
     }
     if (showCredits) {
@@ -128,6 +134,27 @@ private data class SettingsMenuEntry(
     val onClick: () -> Unit,
     val checked: Boolean? = null
 )
+
+@Composable
+private fun SettingsMenuSection(title: String, entries: List<SettingsMenuEntry>) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            title,
+            modifier = Modifier.padding(horizontal = 8.dp).semantics { heading() },
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            entries.forEachIndexed { index, entry ->
+                SettingsMenuRow(
+                    entry = entry,
+                    first = index == 0,
+                    last = index == entries.lastIndex
+                )
+            }
+        }
+    }
+}
 
 /** 行全体を押せる面にし、先頭と末尾に大きな角丸を付けてひとまとまりに見せる。 */
 @Composable
@@ -199,7 +226,6 @@ private fun MenuScreenPreview() {
                 onTimetable = {},
                 onTimeSettings = {},
                 onNotificationSettings = {},
-                onNotificationTest = {},
                 onThemeSettings = {},
                 paused = false,
                 onTogglePause = {}
